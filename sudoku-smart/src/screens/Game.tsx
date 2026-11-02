@@ -1,6 +1,7 @@
 import { motion } from 'motion/react'
-import { Check, Eraser, Lightbulb, Pause, PencilLine, Play, Redo2, RotateCcw, Undo2 } from 'lucide-react'
+import { Check, Eraser, Lightbulb, Pause, PencilLine, Play, Redo2, RotateCcw, Undo2, Volume2, VolumeX } from 'lucide-react'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { useA11y } from '../components/A11yProvider'
 import { Board } from '../components/Board'
 import { Dialog } from '../components/Dialog'
 import { Button } from '../components/ui'
@@ -17,11 +18,19 @@ import {
   type MoveResult,
 } from '../lib/game'
 import { play } from '../lib/sound'
+import { speak, stopSpeech } from '../lib/speech'
 import type { Difficulty } from '../lib/sudoku'
 import { DIFFICULTY_LABEL, formatTime, progressOf, type Game, type Screen, type Settings, type Stats } from '../lib/store'
 import { Celebration } from './Celebration'
 
 type Tone = 'info' | 'error' | 'hint'
+
+/** "3:20" read aloud as "3 minutes 20 seconds". */
+function spokenTime(total: number) {
+  const m = Math.floor(total / 60)
+  const sec = total % 60
+  return [m && `${m} ${m === 1 ? 'minute' : 'minutes'}`, `${sec} ${sec === 1 ? 'second' : 'seconds'}`].filter(Boolean).join(' ')
+}
 
 export function GameScreen({
   game,
@@ -49,6 +58,9 @@ export function GameScreen({
   const [message, setMessage] = useState<{ text: string; tone: Tone } | null>(null)
   const [confirmRestart, setConfirmRestart] = useState(false)
   const [won, setWon] = useState<{ best: boolean; first: boolean } | null>(null)
+  // Short screen-reader announcements for moves the board's own labels cannot report.
+  const [announce, setAnnounce] = useState('')
+  const { a11y, motionOk, muted, setMuted } = useA11y()
   const playing = game.status === 'playing'
 
   // Timer: counts while the puzzle is open, unpaused and the tab is visible.
@@ -75,6 +87,21 @@ export function GameScreen({
       setGame((prev) => ({ ...r.game, elapsed: prev?.elapsed ?? r.game.elapsed }))
       const cue = r.event === 'mistake' ? 'error' : r.event === 'won' ? 'win' : r.event === 'erased' ? 'erase' : r.event === 'note' ? 'note' : r.event === 'hint' ? 'hint' : 'place'
       play(cue, settings.sound)
+      const left = r.game.values.filter((v, i) => v !== r.game.solution[i]).length
+      if (r.event === 'placed' && r.cell !== undefined) {
+        const text = `${r.game.values[r.cell]} placed. ${left} ${left === 1 ? 'cell' : 'cells'} left.`
+        setAnnounce(text)
+        speak(r.message ?? text)
+      } else if (r.event === 'erased') {
+        setAnnounce('Cell cleared.')
+        speak('Cleared.')
+      } else if (r.event === 'note' && r.cell !== undefined) {
+        const marks = notesText(r.game.notes[r.cell])
+        setAnnounce(`Notes: ${marks || 'none'}.`)
+        speak(`Notes ${marks || 'cleared'}.`)
+      } else if (r.event === 'won') {
+        speak(`Puzzle solved in ${spokenTime(r.game.elapsed)}, with ${r.game.mistakes} ${r.game.mistakes === 1 ? 'mistake' : 'mistakes'}.`)
+      } else if (r.message) speak(r.message)
       if (r.event === 'mistake') setMessage({ text: r.message!, tone: 'error' })
       else if (r.event === 'hint') setMessage({ text: r.message!, tone: 'hint' })
       else if (r.message) setMessage({ text: r.message, tone: 'info' })
@@ -84,10 +111,10 @@ export function GameScreen({
         const result = onWin(r.game)
         setSelected(null)
         // Let the board's wave finish before the dialog covers it.
-        setTimeout(() => setWon(result), settings.animations ? 900 : 0)
+        setTimeout(() => setWon(result), motionOk ? 900 : 0)
       }
     },
-    [setGame, settings.sound, settings.animations, onWin],
+    [setGame, settings.sound, motionOk, onWin],
   )
 
   const input = useCallback(
@@ -128,9 +155,22 @@ export function GameScreen({
 
   const togglePause = useCallback(() => {
     if (!playing) return
+    speak(paused ? 'Resumed.' : 'Paused. The clock is stopped.')
     setPaused((p) => !p)
     play('tap', settings.sound)
-  }, [playing, settings.sound])
+  }, [playing, paused, settings.sound])
+
+  // Spoken guidance reads the selected cell, after a short pause so fast arrowing only reads the
+  // cell where the player stops. Changes to the cell's value are spoken by the move itself.
+  const gameRef = useRef(game)
+  useEffect(() => {
+    gameRef.current = game
+  })
+  useEffect(() => {
+    if (!a11y.speech || selected === null || paused) return
+    const t = setTimeout(() => speak(cellText(gameRef.current, selected)), 220)
+    return () => clearTimeout(t)
+  }, [selected, a11y.speech, paused])
 
   // Keyboard: arrows move, digits place (Shift + digit pencils a note), N notes, H hint, P pause.
   const keyRef = useRef<(e: KeyboardEvent) => void>(() => {})
@@ -177,9 +217,15 @@ export function GameScreen({
         e.preventDefault()
         return erase()
       }
-      if (e.key === 'n' || e.key === 'N') return setNotesMode((m) => !m)
+      if (e.key === 'n' || e.key === 'N') {
+        speak(notesMode ? 'Notes off.' : 'Notes on.')
+        return setNotesMode((m) => !m)
+      }
       if (e.key === 'h' || e.key === 'H') return hint()
-      if (e.key === 'Escape') setSelected(null)
+      if (e.key === 'Escape') {
+        stopSpeech()
+        setSelected(null)
+      }
     }
   })
   useEffect(() => {
@@ -217,17 +263,32 @@ export function GameScreen({
     <div className="mx-auto w-full max-w-[1120px] px-4 pt-5 pb-10 sm:px-6 lg:px-10 lg:pt-9">
       <div className="grid gap-x-10 gap-y-3 lg:grid-cols-[minmax(0,1fr)_344px] lg:items-start lg:gap-y-4">
         {/* Title row */}
-        <div className="flex items-end justify-between gap-4 lg:col-span-2">
+        <div className="flex flex-wrap items-end justify-between gap-x-4 gap-y-2 lg:col-span-2">
           <div className="min-w-0">
-            <h1 className="text-[22px] leading-tight font-semibold tracking-[-0.01em] text-ink lg:text-2xl">{label} puzzle</h1>
+            <h1 className="text-[1.375rem] leading-tight font-semibold tracking-[-0.01em] text-ink lg:text-2xl">{label} puzzle</h1>
             <p className="mt-1 text-sm text-muted">
               {progress.total - progress.filled} of {progress.total} cells left to fill
             </p>
           </div>
           <div className="flex items-center gap-2">
-            <span className="num text-[22px] text-ink lg:text-2xl" aria-label={`Time ${formatTime(game.elapsed)}`} role="timer">
+            <span className="num text-[1.375rem] text-ink lg:text-2xl" aria-label={`Time ${formatTime(game.elapsed)}`} role="timer">
               {formatTime(game.elapsed)}
             </span>
+            {a11y.speech && (
+              <button
+                type="button"
+                onClick={() => {
+                  stopSpeech()
+                  setMuted(!muted)
+                }}
+                aria-pressed={muted}
+                aria-label={muted ? 'Turn spoken guidance back on' : 'Mute spoken guidance'}
+                title={muted ? 'Unmute voice' : 'Mute voice'}
+                className="flex h-11 w-11 items-center justify-center rounded-full border border-control bg-surface text-ink transition-colors hover:bg-panel active:scale-95"
+              >
+                {muted ? <VolumeX size={18} strokeWidth={1.75} /> : <Volume2 size={18} strokeWidth={1.75} />}
+              </button>
+            )}
             <button
               type="button"
               onClick={togglePause}
@@ -242,14 +303,14 @@ export function GameScreen({
         </div>
 
         {/* Phone: one compact line of status so board, tools and keypad share the first screen */}
-        <div className="flex items-center gap-4 text-sm lg:hidden" aria-hidden="true">
+        <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-sm whitespace-nowrap lg:hidden" aria-hidden="true">
           <span className="text-muted">
             Mistakes <span className={`num ${game.mistakes ? 'text-negative' : 'text-ink'}`}>{game.mistakes}</span>
           </span>
           <span className="text-muted">
             Hints <span className="num text-ink">{game.hintsLeft}</span>
           </span>
-          <span className="flex flex-1 items-center gap-2">
+          <span className="flex min-w-[8rem] flex-1 items-center gap-2">
             <span className="h-1.5 flex-1 overflow-hidden rounded-full bg-active">
               <span className="block h-full rounded-full bg-accent transition-[width] duration-300" style={{ width: `${progress.pct}%` }} />
             </span>
@@ -259,6 +320,13 @@ export function GameScreen({
 
         {/* Board */}
         <div className="relative w-full max-w-[600px] justify-self-center lg:row-span-4 lg:justify-self-stretch">
+          {/* Board zoom: the frame keeps the board's place in the layout; a zoomed board scrolls inside it */}
+          <div
+            className={a11y.boardZoom > 1 ? 'aspect-square overflow-auto overscroll-contain rounded-2xl' : undefined}
+            role={a11y.boardZoom > 1 ? 'region' : undefined}
+            aria-label={a11y.boardZoom > 1 ? `Board zoomed to ${a11y.boardZoom * 100}%, scroll to see every cell` : undefined}
+          >
+            <div style={a11y.boardZoom > 1 ? { width: `${a11y.boardZoom * 100}%` } : undefined}>
           <Board
             values={game.values}
             givens={game.puzzle}
@@ -276,6 +344,8 @@ export function GameScreen({
             hidden={paused}
             label={`${label} Sudoku board`}
           />
+            </div>
+          </div>
           {paused && (
             <div className="absolute inset-0 flex flex-col items-center justify-center gap-4 rounded-2xl bg-panel p-6 text-center">
               <p className="font-serif text-4xl text-ink">Paused</p>
@@ -338,10 +408,13 @@ export function GameScreen({
         >
           {message?.text ?? guidance}
         </p>
+        <p className="sr-only" aria-live="polite" aria-atomic="true">
+          {announce}
+        </p>
 
         {/* Tools and keypad */}
         <div className="space-y-3">
-          <div className="grid grid-cols-5 gap-1.5" role="toolbar" aria-label="Game tools">
+          <div className="grid grid-cols-5 gap-1.5 big-text:grid-cols-3" role="toolbar" aria-label="Game tools">
             {tools.map((t) => {
               const Icon = t.icon
               return (
@@ -353,14 +426,14 @@ export function GameScreen({
                   aria-pressed={t.pressed}
                   aria-keyshortcuts={t.keys}
                   title={`${t.label} (${t.keys})`}
-                  className={`relative flex h-16 flex-col items-center justify-center gap-1 rounded-2xl text-xs font-medium transition-[background-color,color,transform] duration-150 active:scale-95 disabled:opacity-40 ${
+                  className={`relative flex min-h-16 flex-col items-center justify-center gap-1 rounded-2xl px-1 py-2 text-xs font-medium transition-[background-color,color,transform] duration-150 active:scale-95 disabled:opacity-40 ${
                     t.pressed ? 'bg-accent-soft text-accent' : 'text-muted hover:bg-active hover:text-ink'
                   }`}
                 >
                   <Icon size={20} strokeWidth={1.75} aria-hidden="true" />
                   {t.label}
                   {t.badge !== undefined && (
-                    <span className="num absolute top-1.5 right-[calc(50%-22px)] flex h-[18px] min-w-[18px] items-center justify-center rounded-full bg-accent px-1 text-[11px] font-semibold text-surface">
+                    <span className="num absolute top-1.5 right-[calc(50%-22px)] flex h-[1.125rem] min-w-[1.125rem] items-center justify-center rounded-full bg-accent px-1 text-[0.6875rem] font-semibold text-on-accent">
                       {t.badge}
                     </span>
                   )}
@@ -369,7 +442,7 @@ export function GameScreen({
             })}
           </div>
 
-          <div className="grid grid-cols-9 gap-1 lg:grid-cols-3 lg:gap-2" role="group" aria-label={notesMode ? 'Pencil a note' : 'Place a number'}>
+          <div className="grid grid-cols-9 gap-1 max-lg:big-text:grid-cols-5 lg:grid-cols-3 lg:gap-2" role="group" aria-label={notesMode ? 'Pencil a note' : 'Place a number'}>
             {[1, 2, 3, 4, 5, 6, 7, 8, 9].map((d) => {
               const left = 9 - counts[d]
               const done = left <= 0
@@ -380,15 +453,15 @@ export function GameScreen({
                   onClick={() => input(d)}
                   disabled={paused || !playing || (done && !notesMode)}
                   aria-label={`${notesMode ? 'Note' : 'Place'} ${d}, ${done ? 'all placed' : `${left} left`}`}
-                  className={`flex h-14 flex-col items-center justify-center rounded-xl bg-surface text-ink ring-1 ring-border transition-[background-color,transform] duration-150 hover:bg-accent-soft active:scale-95 disabled:opacity-35 lg:h-[72px] lg:rounded-2xl ${
+                  className={`flex min-h-14 flex-col items-center justify-center rounded-xl bg-surface py-1 text-ink ring-1 ring-border transition-[background-color,transform] duration-150 hover:bg-accent-soft active:scale-95 disabled:opacity-35 contrast-high:ring-2 lg:min-h-[4.5rem] lg:rounded-2xl ${
                     notesMode ? 'text-accent' : ''
                   }`}
                 >
-                  <span className={`num leading-none ${notesMode ? 'text-lg lg:text-xl' : 'text-2xl lg:text-[28px]'}`}>{d}</span>
+                  <span className={`num leading-none ${notesMode ? 'text-lg lg:text-xl' : 'text-2xl lg:text-[1.75rem]'}`}>{d}</span>
                   {done ? (
                     <Check size={12} strokeWidth={2.25} className="mt-1 text-positive" aria-hidden="true" />
                   ) : (
-                    <span className="num mt-1 text-[11px] leading-none text-faint">{left}</span>
+                    <span className="num mt-1 text-[0.6875rem] leading-none text-faint">{left}</span>
                   )}
                 </button>
               )
@@ -396,11 +469,11 @@ export function GameScreen({
           </div>
 
           <div className="flex items-center justify-between pt-1">
-            <Button variant="ghost" className="-ml-3 h-10 px-3 text-sm" onClick={() => setConfirmRestart(true)} disabled={!playing}>
+            <Button variant="ghost" className="-ml-3 min-h-10 px-3 text-sm" onClick={() => setConfirmRestart(true)} disabled={!playing}>
               <RotateCcw size={15} strokeWidth={1.75} aria-hidden="true" />
               Restart puzzle
             </Button>
-            <Button variant="ghost" className="-mr-3 h-10 px-3 text-sm" onClick={() => onNavigate('difficulty')}>
+            <Button variant="ghost" className="-mr-3 min-h-10 px-3 text-sm" onClick={() => onNavigate('difficulty')}>
               New game
             </Button>
           </div>
@@ -414,7 +487,7 @@ export function GameScreen({
         <h2 id="restart-title" className="text-xl font-semibold text-ink">
           Restart this puzzle?
         </h2>
-        <p className="mt-2 text-[15px] leading-6 text-muted">
+        <p className="mt-2 text-[0.9375rem] leading-6 text-muted">
           Your numbers and notes are cleared and the clock goes back to 0:00. The given numbers stay the same.
         </p>
         <div className="mt-6 flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
@@ -436,12 +509,12 @@ export function GameScreen({
       </Dialog>
 
       <Dialog open={!!won} onClose={() => setWon(null)} labelledBy="win-title" wide>
-        {settings.animations && <Celebration />}
+        {motionOk && <Celebration />}
         <div className="relative">
-          <h2 id="win-title" className="font-serif text-[44px] leading-none text-ink">
+          <h2 id="win-title" className="font-serif text-[2.75rem] leading-none text-ink">
             Solved.
           </h2>
-          <p className="mt-3 text-[15px] leading-6 text-muted">
+          <p className="mt-3 text-[0.9375rem] leading-6 text-muted">
             {won?.first
               ? `Your first ${label} puzzle is done. That time is now your best.`
               : won?.best
@@ -475,4 +548,20 @@ export function GameScreen({
       </Dialog>
     </div>
   )
+}
+
+function notesText(mask: number) {
+  const out: number[] = []
+  for (let d = 1; d <= 9; d++) if (mask & (1 << d)) out.push(d)
+  return out.join(', ')
+}
+
+/** What spoken guidance reads for a cell: where it is, what it holds, and whether it can change. */
+function cellText(g: Game, i: number) {
+  const where = `Row ${Math.floor(i / 9) + 1}, column ${(i % 9) + 1}`
+  const v = g.values[i]
+  if (g.puzzle[i]) return `${where}, ${v}, fixed.`
+  if (v) return `${where}, ${v}${v !== g.solution[i] ? ', incorrect' : ''}.`
+  const notes = notesText(g.notes[i])
+  return `${where}, empty${notes ? `, notes ${notes}` : ''}.`
 }

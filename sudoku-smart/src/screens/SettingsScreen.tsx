@@ -1,24 +1,42 @@
 import { AnimatePresence, motion } from 'motion/react'
 import { Check, Monitor, Moon, Sun } from 'lucide-react'
 import { useEffect, useState, type ReactNode } from 'react'
-import { Board } from '../components/Board'
 import { Dialog } from '../components/Dialog'
 import { Button, SwitchRow } from '../components/ui'
+import { AccessibilityHeading, AccessibilityPreview, VisualAccessibility } from '../components/VisualAccessibility'
+import { DEFAULT_A11Y } from '../lib/a11y'
 import { DEFAULT_SETTINGS, type Settings, type Theme } from '../lib/store'
 
-// A small corner of a board to show what the highlight and error settings do.
-const PREVIEW_VALUES = [5, 3, 0, 6, 7, 0, 0, 9, 8, 0, 0, 0, 8, 0, 0, 0, 6, 0, 0, 0, 0, 4, 0, 0, 7, 0, 0, 0, 0, 0, 1, 0, 0, 0, 6, 0]
-const PREVIEW_GIVENS = [5, 3, 0, 6, 7, 0, 0, 9, 8, 0, 0, 0, 8, 0, 0, 0, 6, 0, 0, 0, 0, 4, 0, 0, 7, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0]
-
-function Section({ title, description, aside, children }: { title: string; description: string; aside?: ReactNode; children: ReactNode }) {
+function Section({
+  title,
+  heading,
+  description,
+  aside,
+  bare = false,
+  children,
+}: {
+  title: string
+  heading?: ReactNode
+  description: string
+  aside?: ReactNode
+  /** The children bring their own panel. */
+  bare?: boolean
+  children: ReactNode
+}) {
   return (
-    <section className="grid gap-4 border-t border-rule py-8 first:border-t-0 first:pt-0 md:grid-cols-[minmax(0,360px)_minmax(0,1fr)] md:gap-10">
+    <section
+      aria-label={title}
+      className="grid grid-cols-[minmax(0,1fr)] gap-4 border-t border-rule py-8 first:border-t-0 first:pt-0 md:grid-cols-[minmax(0,360px)_minmax(0,1fr)] md:gap-10 big-text:md:grid-cols-1"
+    >
+      {/* The label column stays in view beside a tall panel, so its preview can be watched while switching */}
       <div className="md:pt-2">
-        <h2 className="text-base font-medium text-ink">{title}</h2>
-        <p className="mt-1 max-w-[40ch] text-sm leading-5 text-muted">{description}</p>
-        {aside}
+        <div className="md:sticky md:top-6">
+          {heading ?? <h2 className="text-base font-medium text-ink">{title}</h2>}
+          <p className="mt-1 max-w-[40ch] text-sm leading-5 text-muted">{description}</p>
+          {aside}
+        </div>
       </div>
-      <div className="rounded-2xl bg-panel p-2">{children}</div>
+      {bare ? children : <div className="rounded-2xl bg-panel p-2">{children}</div>}
     </section>
   )
 }
@@ -33,7 +51,7 @@ export function SettingsScreen({
   onClearStats: () => void
 }) {
   const [saved, setSaved] = useState(0)
-  const [confirm, setConfirm] = useState<'prefs' | 'stats' | null>(null)
+  const [confirm, setConfirm] = useState<'prefs' | 'stats' | 'a11y' | null>(null)
 
   useEffect(() => {
     if (!saved) return
@@ -52,15 +70,12 @@ export function SettingsScreen({
     { id: 'system', label: 'Device', icon: Monitor },
   ]
 
-  // In the preview, the selected cell is row 2, column 4; cell 13 holds a wrong 9 when error checking is on.
-  const previewValues = PREVIEW_VALUES.map((v, i) => (i === 13 ? 9 : v))
-
   return (
     <div className="mx-auto w-full max-w-[1132px] px-4 pt-6 pb-16 sm:px-6 lg:px-4 lg:pt-9">
       <div className="flex items-end justify-between gap-4">
         <div>
-          <h1 className="text-[22px] font-semibold tracking-[-0.01em] text-ink lg:text-2xl">Settings</h1>
-          <p className="mt-1 text-[15px] text-muted">Changes save as you make them and apply to the game right away.</p>
+          <h1 className="text-[1.375rem] font-semibold tracking-[-0.01em] text-ink lg:text-2xl">Settings</h1>
+          <p className="mt-1 text-[0.9375rem] text-muted">Changes save as you make them and apply to the game right away.</p>
         </div>
         <AnimatePresence>
           {saved > 0 && (
@@ -91,7 +106,7 @@ export function SettingsScreen({
                   role="radio"
                   aria-checked={on}
                   onClick={() => set('theme', t.id)}
-                  className={`flex h-12 items-center justify-center gap-2 rounded-xl text-[15px] transition-colors ${
+                  className={`flex h-12 items-center justify-center gap-2 rounded-xl text-[0.9375rem] transition-colors ${
                     on ? 'bg-surface font-medium text-ink ring-1 ring-border' : 'text-muted hover:bg-active hover:text-ink'
                   }`}
                 >
@@ -104,26 +119,23 @@ export function SettingsScreen({
         </Section>
 
         <Section
-          title="Board help"
-          description="What the board shows while you play. The preview updates as you switch."
-          aside={
-            <div className="mt-5 max-w-[240px]">
-              <div style={{ aspectRatio: '9 / 4' }} className="overflow-hidden rounded-2xl">
-                <Board
-                  values={[...previewValues, ...new Array(45).fill(0)]}
-                  givens={[...PREVIEW_GIVENS, ...new Array(45).fill(0)]}
-                  selected={12}
-                  highlightPeers={settings.highlightPeers}
-                  highlightMatching={settings.highlightMatching}
-                  errors={settings.errorChecking ? new Set([13]) : new Set()}
-                  decorative
-                  label="Preview"
-                />
-              </div>
-              <p className="mt-2 text-xs leading-4 text-muted">Preview: the 8 in row 2 is selected; the 9 beside it is a mistake.</p>
-            </div>
-          }
+          title="Visual Accessibility"
+          heading={<AccessibilityHeading />}
+          description="Customize the game for better visibility, readability, and comfortable gameplay."
+          aside={<AccessibilityPreview settings={settings} />}
+          bare
         >
+          <VisualAccessibility
+            a11y={settings.a11y}
+            onChange={(a11y) => {
+              onChange({ ...settings, a11y })
+              setSaved(Date.now())
+            }}
+            onReset={() => setConfirm('a11y')}
+          />
+        </Section>
+
+        <Section title="Board help" description="What the board shows while you play. The Visual Accessibility preview reflects these too.">
           <SwitchRow
             title="Highlight matching numbers"
             description="Select an 8 and every other 8 on the board is tinted."
@@ -150,18 +162,12 @@ export function SettingsScreen({
           />
         </Section>
 
-        <Section title="Sound and motion" description="Short tones confirm each move. Animations also follow your device's reduced-motion setting.">
+        <Section title="Sound" description="Short tones confirm each move. Motion settings are under Visual Accessibility.">
           <SwitchRow
             title="Sound effects"
             description="A soft tone when you place, erase or make a mistake."
             checked={settings.sound}
             onChange={(v) => set('sound', v)}
-          />
-          <SwitchRow
-            title="Animations"
-            description="Numbers pop in and the board celebrates when you finish."
-            checked={settings.animations}
-            onChange={(v) => set('animations', v)}
           />
         </Section>
 
@@ -177,12 +183,14 @@ export function SettingsScreen({
 
       <Dialog open={confirm !== null} onClose={() => setConfirm(null)} labelledBy="reset-title">
         <h2 id="reset-title" className="text-xl font-semibold text-ink">
-          {confirm === 'stats' ? 'Clear all statistics?' : 'Reset preferences?'}
+          {confirm === 'stats' ? 'Clear all statistics?' : confirm === 'a11y' ? 'Reset accessibility settings?' : 'Reset preferences?'}
         </h2>
-        <p className="mt-2 text-[15px] leading-6 text-muted">
+        <p className="mt-2 text-[0.9375rem] leading-6 text-muted">
           {confirm === 'stats'
             ? 'Puzzles solved, best times, streaks and recent wins are deleted. This cannot be undone.'
-            : 'Theme, sound, animations and board help go back to their defaults.'}
+            : confirm === 'a11y'
+              ? 'Colour vision, font size, contrast, grid, zoom, motion and spoken guidance go back to their standard settings.'
+              : 'Every preference goes back to its default, including theme, sound, board help and visual accessibility.'}
         </p>
         <div className="mt-6 flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
           <Button onClick={() => setConfirm(null)} data-autofocus>
@@ -192,6 +200,7 @@ export function SettingsScreen({
             variant="primary"
             onClick={() => {
               if (confirm === 'stats') onClearStats()
+              else if (confirm === 'a11y') onChange({ ...settings, a11y: DEFAULT_A11Y })
               else onChange(DEFAULT_SETTINGS)
               setSaved(Date.now())
               setConfirm(null)

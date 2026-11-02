@@ -1,3 +1,4 @@
+import { DEFAULT_A11Y, normaliseA11y, type A11y } from './a11y'
 import type { Difficulty, Grid } from './sudoku'
 
 export type Screen = 'home' | 'difficulty' | 'game' | 'howto' | 'settings'
@@ -6,21 +7,21 @@ export type Theme = 'light' | 'dark' | 'system'
 export interface Settings {
   theme: Theme
   sound: boolean
-  animations: boolean
   highlightMatching: boolean
   highlightPeers: boolean
   errorChecking: boolean
   autoRemoveNotes: boolean
+  a11y: A11y
 }
 
 export const DEFAULT_SETTINGS: Settings = {
   theme: 'system',
   sound: true,
-  animations: true,
   highlightMatching: true,
   highlightPeers: true,
   errorChecking: true,
   autoRemoveNotes: true,
+  a11y: DEFAULT_A11Y,
 }
 
 export interface Snapshot {
@@ -100,7 +101,14 @@ function write(key: string, value: unknown) {
   }
 }
 
-export const loadSettings = () => read(KEY.settings, DEFAULT_SETTINGS)
+export function loadSettings(): Settings {
+  const saved = read<Partial<Settings> & { animations?: boolean }>(KEY.settings, {})
+  const { animations, ...rest } = saved
+  const a11y = normaliseA11y(saved.a11y)
+  // Earlier versions had an "Animations" switch; having turned it off carries over as Reduce Motion.
+  if (!saved.a11y && animations === false) a11y.reduceMotion = true
+  return { ...DEFAULT_SETTINGS, ...rest, a11y }
+}
 export const saveSettings = (s: Settings) => write(KEY.settings, s)
 
 export const loadStats = () => read(KEY.stats, EMPTY_STATS)

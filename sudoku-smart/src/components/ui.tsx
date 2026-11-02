@@ -30,7 +30,7 @@ export function Logo() {
   return (
     <span className="flex items-center gap-2.5">
       <LogoMark />
-      <span className="text-[15px] font-semibold tracking-[-0.01em] text-ink">Sudoku Smart</span>
+      <span className="text-[0.9375rem] font-semibold tracking-[-0.01em] text-ink">Sudoku Smart</span>
     </span>
   )
 }
@@ -44,7 +44,7 @@ export function Button({
   ...rest
 }: ButtonHTMLAttributes<HTMLButtonElement> & { variant?: Variant; children: ReactNode }) {
   const base =
-    'inline-flex h-11 items-center justify-center gap-2 rounded-full px-5 text-[15px] font-medium transition-[background-color,color,transform] duration-150 active:scale-[0.97] disabled:pointer-events-none disabled:opacity-60 select-none'
+    'inline-flex min-h-11 items-center justify-center gap-2 rounded-full px-5 py-1.5 text-center text-[0.9375rem] font-medium transition-[background-color,color,transform] duration-150 active:scale-[0.97] disabled:pointer-events-none disabled:opacity-60 select-none'
   const look: Record<Variant, string> = {
     primary: 'btn-primary',
     secondary: 'bg-surface text-ink border border-control hover:bg-panel',
@@ -78,7 +78,7 @@ export function SwitchRow({
       className="flex w-full items-start justify-between gap-6 rounded-xl px-4 py-3.5 text-left transition-colors hover:bg-active/60"
     >
       <span className="min-w-0">
-        <span className="block text-[15px] font-medium text-ink">{title}</span>
+        <span className="block text-[0.9375rem] font-medium text-ink">{title}</span>
         <span className="mt-0.5 block text-sm leading-5 text-muted">{description}</span>
       </span>
       <span

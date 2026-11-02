@@ -73,13 +73,15 @@ export function Shell({
               aria-current={active ? 'page' : undefined}
               onClick={() => go(it.screen)}
               className={`flex w-full items-center gap-2.5 rounded-lg px-3 text-left transition-colors disabled:cursor-not-allowed disabled:text-faint ${
-                big ? 'h-12 text-base' : 'h-9 text-sm'
+                big ? 'min-h-12 py-2 text-base' : 'min-h-9 py-1.5 text-sm'
               } ${active ? 'bg-active font-medium text-ink' : 'text-muted hover:bg-active/60 hover:text-ink'}`}
             >
               <Icon size={big ? 18 : 16} strokeWidth={1.75} aria-hidden="true" />
-              <span className="flex-1">{it.label}</span>
-              {it.hint && <span className="text-xs text-faint">{it.hint}</span>}
-              {it.disabled && it.id === 'continue' && <span className="text-xs">No game yet</span>}
+              <span className="flex flex-1 flex-wrap items-baseline justify-between gap-x-2">
+                <span className="whitespace-nowrap">{it.label}</span>
+                {it.hint && <span className="text-xs text-faint">{it.hint}</span>}
+                {it.disabled && it.id === 'continue' && <span className="text-xs">No game yet</span>}
+              </span>
             </button>
           </li>
         )
@@ -93,7 +95,7 @@ export function Shell({
       aria-current={screen === 'settings' ? 'page' : undefined}
       onClick={() => go('settings')}
       className={`flex w-full items-center gap-2.5 rounded-lg px-3 text-left transition-colors ${
-        big ? 'h-12 text-base' : 'h-9 text-sm'
+        big ? 'min-h-12 py-2 text-base' : 'min-h-9 py-1.5 text-sm'
       } ${screen === 'settings' ? 'bg-active font-medium text-ink' : 'text-muted hover:bg-active/60 hover:text-ink'}`}
     >
       <Cog size={big ? 18 : 16} strokeWidth={1.75} aria-hidden="true" />
@@ -116,7 +118,7 @@ export function Shell({
       <header className="sticky top-0 z-30 flex h-14 items-center justify-between border-b border-border bg-ground px-4 lg:hidden">
         <button type="button" onClick={() => go('home')} className="flex items-center gap-2.5 rounded-lg" aria-label="Sudoku Smart, home">
           <LogoMark size={26} />
-          <span className="text-[15px] font-semibold text-ink">{screen === 'home' ? 'Sudoku Smart' : TITLES[screen]}</span>
+          <span className="text-[0.9375rem] font-semibold text-ink">{screen === 'home' ? 'Sudoku Smart' : TITLES[screen]}</span>
         </button>
         <button
           type="button"

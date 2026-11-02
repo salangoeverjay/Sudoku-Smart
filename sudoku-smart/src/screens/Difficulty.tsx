@@ -55,8 +55,8 @@ export function DifficultyScreen({
 
   return (
     <div className="mx-auto w-full max-w-[1132px] px-4 pt-6 pb-16 sm:px-6 lg:px-4 lg:pt-9">
-      <h1 className="text-[22px] font-semibold tracking-[-0.01em] text-ink lg:text-2xl">Choose a level</h1>
-      <p className="mt-1 text-[15px] text-muted">Each board below is the actual puzzle you will play, with exactly one solution.</p>
+      <h1 className="text-[1.375rem] font-semibold tracking-[-0.01em] text-ink lg:text-2xl">Choose a level</h1>
+      <p className="mt-1 text-[0.9375rem] text-muted">Each board below is the actual puzzle you will play, with exactly one solution.</p>
 
       <div role="radiogroup" aria-label="Difficulty" className="mt-6 grid gap-4 md:grid-cols-3">
         {LEVELS.map((lvl, k) => {
@@ -95,10 +95,10 @@ export function DifficultyScreen({
                   {on && <Check size={14} strokeWidth={2.5} />}
                 </span>
               </div>
-              <span className="mt-3 block text-[15px] leading-6 text-ink md:min-h-[72px]">{lvl.blurb}</span>
+              <span className="mt-3 block text-[0.9375rem] leading-6 text-ink md:min-h-[72px]">{lvl.blurb}</span>
               <div className="mt-4 grid grid-cols-[96px_1fr] items-end gap-4 md:block">
                 <Board decorative values={p.puzzle} givens={p.puzzle} label={`${DIFFICULTY_LABEL[lvl.id]} puzzle preview`} className="md:mx-auto md:max-w-[260px]" />
-                <span className="text-[13px] text-muted md:mt-3 md:block">
+                <span className="text-[0.8125rem] text-muted md:mt-3 md:block">
                   {best !== null ? (
                     <>
                       Your best: <span className="num text-ink">{formatTime(best)}</span> · {stats.won[lvl.id]} solved

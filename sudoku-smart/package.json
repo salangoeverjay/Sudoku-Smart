@@ -8,7 +8,7 @@
     "build": "tsc -b && vite build",
     "lint": "oxlint",
     "preview": "vite preview",
-    "test": "tsx scripts/test-engine.ts && tsx scripts/test-game.ts"
+    "test": "tsx scripts/test-engine.ts && tsx scripts/test-game.ts && tsx scripts/test-contrast.ts"
   },
   "dependencies": {
     "lucide-react": "^1.66.0",

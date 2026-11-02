@@ -1,5 +1,6 @@
 import { AnimatePresence, MotionConfig, motion } from 'motion/react'
 import { useCallback, useEffect, useRef, useState } from 'react'
+import { A11yProvider } from './components/A11yProvider'
 import { Shell } from './components/Shell'
 import { newGame } from './lib/game'
 import type { Difficulty, Grid } from './lib/sudoku'
@@ -13,7 +14,6 @@ import {
   saveStats,
   type Game,
   type Screen,
-  type Settings,
 } from './lib/store'
 import { DifficultyScreen } from './screens/Difficulty'
 import { GameScreen } from './screens/Game'
@@ -30,11 +30,6 @@ function screenFromHash(): Screen {
   return SCREENS.includes(id) ? id : 'home'
 }
 
-function resolveTheme(t: Settings['theme']) {
-  if (t !== 'system') return t
-  return matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light'
-}
-
 export default function App() {
   const [settings, setSettings] = useState(loadSettings)
   const [stats, setStats] = useState(loadStats)
@@ -44,15 +39,6 @@ export default function App() {
   useEffect(() => saveSettings(settings), [settings])
   useEffect(() => saveStats(stats), [stats])
   useEffect(() => saveGame(game), [game])
-
-  // Theme, including live changes to the device setting when "Device" is chosen.
-  useEffect(() => {
-    const apply = () => (document.documentElement.dataset.theme = resolveTheme(settings.theme))
-    apply()
-    const mq = matchMedia('(prefers-color-scheme: dark)')
-    mq.addEventListener('change', apply)
-    return () => mq.removeEventListener('change', apply)
-  }, [settings.theme])
 
   // #/new/easy (or medium, hard) opens a fresh game at that level straight from a link.
   const startRef = useRef<(d: Difficulty) => void>(() => {})
@@ -165,20 +151,23 @@ export default function App() {
   }
 
   return (
-    <MotionConfig reducedMotion={settings.animations ? 'user' : 'always'}>
-      <Shell screen={screen} game={activeGame} onNavigate={navigate}>
-        <AnimatePresence mode="wait" initial={false}>
-          <motion.div
-            key={screen}
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            transition={{ duration: settings.animations ? 0.14 : 0 }}
-          >
-            {view}
-          </motion.div>
-        </AnimatePresence>
-      </Shell>
-    </MotionConfig>
+    <A11yProvider a11y={settings.a11y} theme={settings.theme}>
+      {/* Reduce Motion stops every animation; otherwise the device's reduced-motion setting is followed. */}
+      <MotionConfig reducedMotion={settings.a11y.reduceMotion ? 'always' : 'user'}>
+        <Shell screen={screen} game={activeGame} onNavigate={navigate}>
+          <AnimatePresence mode="wait" initial={false}>
+            <motion.div
+              key={screen}
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: settings.a11y.reduceMotion ? 0 : 0.14 }}
+            >
+              {view}
+            </motion.div>
+          </AnimatePresence>
+        </Shell>
+      </MotionConfig>
+    </A11yProvider>
   )
 }

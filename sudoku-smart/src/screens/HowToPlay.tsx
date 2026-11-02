@@ -119,11 +119,11 @@ export function HowToPlay({ settings, onNavigate }: { settings: Settings; onNavi
 
   return (
     <div className="mx-auto w-full max-w-[1132px] px-4 pt-6 pb-16 sm:px-6 lg:px-4 lg:pt-9">
-      <h1 className="text-[22px] font-semibold tracking-[-0.01em] text-ink lg:text-2xl">How to play</h1>
-      <p className="mt-1 text-[15px] text-muted">Five rules, a practice board, and the tools that help. About two minutes.</p>
+      <h1 className="text-[1.375rem] font-semibold tracking-[-0.01em] text-ink lg:text-2xl">How to play</h1>
+      <p className="mt-1 text-[0.9375rem] text-muted">Five rules, a practice board, and the tools that help. About two minutes.</p>
 
       {/* The rules */}
-      <section aria-labelledby="rules-title" className="mt-8 grid gap-6 lg:grid-cols-12 lg:gap-4">
+      <section aria-labelledby="rules-title" className="mt-8 grid grid-cols-[minmax(0,1fr)] gap-6 lg:grid-cols-12 lg:gap-4">
         <div className="lg:col-span-5">
           <h2 id="rules-title" className="text-lg font-semibold text-ink">
             The rules
@@ -149,7 +149,7 @@ export function HowToPlay({ settings, onNavigate }: { settings: Settings; onNavi
                       {k + 1}
                     </span>
                     <span className="min-w-0 pt-0.5">
-                      <span className={`block text-[15px] leading-6 ${on ? 'font-medium text-ink' : 'text-ink'}`}>{st.title}</span>
+                      <span className={`block text-[0.9375rem] leading-6 ${on ? 'font-medium text-ink' : 'text-ink'}`}>{st.title}</span>
                       {on && <span className="mt-1 block text-sm leading-5 text-muted">{st.detail}</span>}
                     </span>
                   </button>
@@ -157,7 +157,7 @@ export function HowToPlay({ settings, onNavigate }: { settings: Settings; onNavi
               )
             })}
           </ol>
-          <div className="mt-4 flex gap-2">
+          <div className="mt-4 flex flex-wrap gap-2">
             <Button onClick={() => setStep((k) => Math.max(0, k - 1))} disabled={step === 0} aria-label="Previous rule">
               <ArrowLeft size={16} strokeWidth={1.75} aria-hidden="true" />
               Back
@@ -213,7 +213,7 @@ export function HowToPlay({ settings, onNavigate }: { settings: Settings; onNavi
             <h2 id="try-title" className="text-lg font-semibold text-ink">
               Try a small one
             </h2>
-            <p className="mt-1 max-w-[52ch] text-[15px] leading-6 text-ink">
+            <p className="mt-1 max-w-[52ch] text-[0.9375rem] leading-6 text-ink">
               Same rules on a 4×4 board: each row, column and 2×2 box holds 1 to 4 once. Select a cell, then pick a
               number.
             </p>
@@ -241,7 +241,7 @@ export function HowToPlay({ settings, onNavigate }: { settings: Settings; onNavi
             </div>
             <p
               aria-live="polite"
-              className={`mt-4 min-h-6 text-[15px] ${feedback ? (feedback.ok ? 'text-positive' : 'text-negative') : 'text-muted'}`}
+              className={`mt-4 min-h-6 text-[0.9375rem] ${feedback ? (feedback.ok ? 'text-positive' : 'text-negative') : 'text-muted'}`}
             >
               {feedback?.text ?? 'Start with the top row: it already has 1 and 4, so the gaps need 2 and 3.'}
             </p>
@@ -275,7 +275,7 @@ export function HowToPlay({ settings, onNavigate }: { settings: Settings; onNavi
             <div key={t.name} className="flex gap-3">
               <t.icon size={18} strokeWidth={1.75} className="mt-0.5 shrink-0 text-muted" aria-hidden="true" />
               <div>
-                <dt className="text-[15px] font-medium text-ink">{t.name}</dt>
+                <dt className="text-[0.9375rem] font-medium text-ink">{t.name}</dt>
                 <dd className="mt-1 text-sm leading-5 text-muted">{t.text}</dd>
               </div>
             </div>

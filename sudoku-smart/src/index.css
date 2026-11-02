@@ -1,6 +1,9 @@
 @import "tailwindcss";
 
 @custom-variant dark (&:where([data-theme="dark"], [data-theme="dark"] *));
+/* Text set to Large or Extra large: layouts that would crowd switch to roomier arrangements. */
+@custom-variant big-text (&:where([data-font-scale="1.5"] *, [data-font-scale="2"] *));
+@custom-variant contrast-high (&:where([data-contrast="high"] *));
 
 /*
   Tokens. The brand asks for lavender, purple and blue, so the style's roles are mapped onto them:
@@ -23,10 +26,12 @@
   --accent: #5b3fd0;
   --accent-hover: #4c32b8;
   --accent-soft: #ebe6fd;
+  --on-accent: #ffffff;
   --entry: #2a5bd0;
 
   --cell: #ffffff;
   --cell-peer: #f1eefb;
+  --cell-line: #e6dffc;
   --cell-same: #ddd4fb;
   --cell-selected: #c6b7f8;
   --line: #e2ddf0;
@@ -57,10 +62,12 @@
   --accent: #a28dff;
   --accent-hover: #b4a3ff;
   --accent-soft: #2b2546;
+  --on-accent: #120f1f;
   --entry: #8eb0ff;
 
   --cell: #17151f;
   --cell-peer: #211e2d;
+  --cell-line: #2c2742;
   --cell-same: #342c55;
   --cell-selected: #4a3d86;
   --line: #2b2837;
@@ -86,6 +93,7 @@
   --color-accent: var(--accent);
   --color-accent-hover: var(--accent-hover);
   --color-accent-soft: var(--accent-soft);
+  --color-on-accent: var(--on-accent);
   --color-entry: var(--entry);
   --color-positive: var(--positive);
   --color-negative: var(--negative);
@@ -120,14 +128,56 @@ body {
   background: var(--accent-soft);
 }
 
-/* On the dark theme the violet button carries dark text so its label keeps 4.5:1. */
+/* The label colour comes with the palette, so the button keeps 4.5:1 in every mode and theme. */
 .btn-primary {
   background: var(--accent);
-  color: #fff;
+  color: var(--on-accent);
 }
 .btn-primary:hover {
   background: var(--accent-hover);
 }
-:root[data-theme="dark"] .btn-primary {
-  color: #120f1f;
+
+/* High contrast: strong focus, solid edges on panels and controls, no faded text. */
+:root[data-contrast="high"] :focus-visible {
+  outline: 3px solid var(--text);
+  outline-offset: 2px;
+  box-shadow: 0 0 0 6px var(--surface);
+}
+:root[data-contrast="high"] .bg-panel,
+:root[data-contrast="high"] [role="toolbar"] button,
+:root[data-contrast="high"] [role="dialog"] {
+  outline: 2px solid var(--border);
+  outline-offset: -2px;
+}
+:root[data-contrast="high"] .btn-primary {
+  outline: 2px solid var(--text);
+  outline-offset: 1px;
+}
+:root[data-contrast="high"] :disabled {
+  opacity: 0.75 !important;
+}
+
+/* Reduce motion: transitions and decorative animation stop; state changes still show at once. */
+:root[data-motion="reduce"] *,
+:root[data-motion="reduce"] *::before,
+:root[data-motion="reduce"] *::after {
+  transition-duration: 0s !important;
+  animation-duration: 0s !important;
+  animation-iteration-count: 1 !important;
+  scroll-behavior: auto !important;
+}
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    transition-duration: 0s !important;
+    animation-duration: 0s !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/* A word too long for its line wraps instead of being clipped when text is set large. */
+:root[data-font-scale="1.5"] body,
+:root[data-font-scale="2"] body {
+  overflow-wrap: break-word;
 }

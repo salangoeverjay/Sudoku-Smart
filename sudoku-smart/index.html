@@ -21,7 +21,15 @@
         }
         var t = (JSON.parse(localStorage.getItem('sudoku-smart:settings') || '{}').theme) || 'system';
         if (t === 'system') t = matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
-        document.documentElement.dataset.theme = t;
+        var root = document.documentElement;
+        // Colours and text size from the last visit, so accessibility modes apply before first paint.
+        var v = JSON.parse(localStorage.getItem('sudoku-smart:vars') || 'null');
+        if (v && !q && v.data && v.data.theme === t) {
+          for (var k in v.tokens) root.style.setProperty('--' + k, v.tokens[k]);
+          for (var d in v.data) root.dataset[d] = v.data[d];
+          root.style.fontSize = v.fontSize;
+        }
+        root.dataset.theme = t;
       } catch (e) {}
     </script>
   </head>

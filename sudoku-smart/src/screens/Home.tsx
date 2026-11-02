@@ -70,20 +70,20 @@ export function Home({
   return (
     <div className="mx-auto w-full max-w-[1132px] px-4 pt-7 pb-16 sm:px-6 lg:px-4 lg:pt-[72px]">
       <header>
-        <h1 className="max-w-[22ch] font-serif text-[34px] leading-[1.05] tracking-[-0.01em] text-ink sm:text-[44px] lg:text-5xl">
+        <h1 className="max-w-[22ch] font-serif text-[2.125rem] leading-[1.05] tracking-[-0.01em] text-ink sm:text-[2.75rem] lg:text-5xl">
           {greeting}
         </h1>
-        <p className="mt-3 text-[15px] text-muted">
+        <p className="mt-3 text-[0.9375rem] text-muted">
           {now.toLocaleDateString([], { weekday: 'long', day: 'numeric', month: 'long' })}
           {stats.streak > 1 && ` · ${stats.streak} wins in a row`}
         </p>
       </header>
 
-      <div className="mt-8 grid grid-cols-2 gap-4 lg:mt-[50px] lg:grid-cols-12">
+      <div className="mt-8 grid grid-cols-[repeat(2,minmax(0,1fr))] gap-4 lg:mt-[50px] lg:grid-cols-12">
         {/* Puzzle in progress, the screen's answer: where did I leave off? */}
         <section
           aria-labelledby="continue-title"
-          className="col-span-2 rounded-[20px] bg-panel p-4 sm:p-5 lg:order-2 lg:col-span-9"
+          className="col-span-2 rounded-[20px] bg-panel p-4 sm:p-5 lg:order-2 lg:col-span-9 big-text:lg:col-span-12"
         >
           <div className="grid gap-5 sm:grid-cols-[minmax(0,232px)_1fr] sm:items-center sm:gap-7">
             <button
@@ -134,7 +134,7 @@ export function Home({
                   </dl>
                 </>
               ) : (
-                <p className="mt-2 max-w-[46ch] text-[15px] leading-6 text-ink">
+                <p className="mt-2 max-w-[46ch] text-[0.9375rem] leading-6 text-ink">
                   Pick a level and a fresh board is generated for you, checked to have exactly one solution. Your
                   progress saves as you play.
                 </p>
@@ -163,7 +163,7 @@ export function Home({
         </section>
 
         {/* Shortcuts */}
-        <nav aria-labelledby="more-title" className="col-span-2 rounded-[20px] bg-panel p-4 sm:p-5 lg:order-3 lg:col-span-3">
+        <nav aria-labelledby="more-title" className="col-span-2 rounded-[20px] bg-panel p-4 sm:p-5 lg:order-3 lg:col-span-3 big-text:lg:col-span-12">
           <h2 id="more-title" className="text-sm font-semibold text-ink">
             Play and learn
           </h2>
@@ -173,12 +173,12 @@ export function Home({
                 <button
                   type="button"
                   onClick={() => onNavigate(s.to)}
-                  className="group flex h-[63px] w-full items-center gap-3 rounded-[14px] bg-surface px-3.5 text-left ring-1 ring-border transition-colors hover:bg-accent-soft"
+                  className="group flex min-h-[3.9375rem] w-full items-center gap-3 rounded-[14px] bg-surface px-3.5 text-left ring-1 ring-border transition-colors hover:bg-accent-soft"
                 >
                   <s.icon size={18} strokeWidth={1.75} className="shrink-0 text-muted" aria-hidden="true" />
                   <span className="min-w-0 flex-1">
-                    <span className="block text-[15px] font-medium text-ink">{s.label}</span>
-                    <span className="block truncate text-[13px] text-muted">{s.note}</span>
+                    <span className="block text-[0.9375rem] font-medium text-ink">{s.label}</span>
+                    <span className="block truncate text-[0.8125rem] text-muted big-text:whitespace-normal">{s.note}</span>
                   </span>
                   <ChevronRight size={16} className="text-faint transition-transform group-hover:translate-x-0.5" aria-hidden="true" />
                 </button>
@@ -188,29 +188,30 @@ export function Home({
         </nav>
 
         {/* Statistics */}
-        <section aria-label="Your statistics" className="col-span-2 grid grid-cols-2 gap-4 lg:order-1 lg:col-span-12 lg:grid-cols-4">
+        <section aria-label="Your statistics" className="col-span-2 grid grid-cols-2 gap-4 lg:order-1 lg:col-span-12 lg:grid-cols-4 big-text:lg:grid-cols-2">
           {tiles.map((t) => (
-            <div key={t.label} className="flex min-h-[128px] flex-col rounded-[20px] bg-panel p-4">
-              <p className="text-[13px] text-muted">{t.label}</p>
-              <p className="num mt-2 text-[28px] leading-none text-ink lg:text-[32px]">
+            <div key={t.label} className="flex min-h-[8rem] flex-col rounded-[20px] bg-panel p-4">
+              <p className="text-[0.8125rem] text-muted">{t.label}</p>
+              <p className="num mt-2 text-[1.75rem] leading-none text-ink lg:text-[2rem]">
                 {t.value}
                 {t.unit && <span className="text-lg text-faint">{t.unit}</span>}
               </p>
-              <p className="mt-auto pt-3 text-[13px] leading-5 text-muted">{t.caption}</p>
+              <p className="mt-auto pt-3 text-[0.8125rem] leading-5 text-muted">{t.caption}</p>
             </div>
           ))}
         </section>
 
         {/* Best times by level */}
-        <section aria-labelledby="levels-title" className="col-span-2 rounded-[20px] bg-panel p-4 sm:p-5 lg:order-4 lg:col-span-6">
+        <section aria-labelledby="levels-title" className="col-span-2 min-w-0 rounded-[20px] bg-panel p-4 sm:p-5 lg:order-4 lg:col-span-6 big-text:lg:col-span-12">
           <h2 id="levels-title" className="text-sm font-semibold text-ink">
             By level
           </h2>
-          <table className="mt-2 w-full text-sm">
+          <div className="mt-2 overflow-x-auto">
+          <table className="w-full text-sm">
             <thead>
               <tr className="text-left text-xs text-muted">
                 <th className="py-2 font-normal">Level</th>
-                <th className="py-2 text-right font-normal">Numbers given</th>
+                <th className="py-2 text-right font-normal max-sm:big-text:hidden">Numbers given</th>
                 <th className="py-2 text-right font-normal">Solved</th>
                 <th className="py-2 text-right font-normal">Best time</th>
               </tr>
@@ -218,8 +219,8 @@ export function Home({
             <tbody>
               {LEVELS.map((d) => (
                 <tr key={d} className="border-t border-rule">
-                  <td className="h-12 text-[15px] text-ink">{DIFFICULTY_LABEL[d]}</td>
-                  <td className="num text-right text-muted">about {CLUES[d]}</td>
+                  <td className="h-12 text-[0.9375rem] text-ink">{DIFFICULTY_LABEL[d]}</td>
+                  <td className="num text-right text-muted max-sm:big-text:hidden">about {CLUES[d]}</td>
                   <td className="num text-right text-ink">{stats.won[d]}</td>
                   <td className={`num text-right ${stats.best[d] !== null ? 'text-ink' : 'text-faint'}`}>
                     {stats.best[d] !== null ? formatTime(stats.best[d]!) : '—'}
@@ -228,10 +229,11 @@ export function Home({
               ))}
             </tbody>
           </table>
+          </div>
         </section>
 
         {/* Recent games */}
-        <section aria-labelledby="recent-title" className="col-span-2 flex flex-col rounded-[20px] bg-panel p-4 sm:p-5 lg:order-5 lg:col-span-6">
+        <section aria-labelledby="recent-title" className="col-span-2 flex min-w-0 flex-col rounded-[20px] bg-panel p-4 sm:p-5 lg:order-5 lg:col-span-6 big-text:lg:col-span-12">
           <div className="flex items-baseline justify-between">
             <h2 id="recent-title" className="text-sm font-semibold text-ink">
               Recent wins
@@ -241,16 +243,16 @@ export function Home({
           {recent.length ? (
             <ul className="mt-2">
               {recent.map((r) => (
-                <li key={r.id} className="flex h-[52px] items-center justify-between gap-4 border-t border-rule first:border-t-0">
+                <li key={r.id} className="flex min-h-[3.25rem] items-center justify-between gap-4 border-t border-rule first:border-t-0">
                   <span className="min-w-0">
-                    <span className="block text-[15px] text-ink">
+                    <span className="block text-[0.9375rem] text-ink">
                       {DIFFICULTY_LABEL[r.difficulty]} in <span className="num">{formatTime(r.seconds)}</span>
                     </span>
-                    <span className="block text-[13px] text-muted">
+                    <span className="block text-[0.8125rem] text-muted">
                       {r.mistakes} {r.mistakes === 1 ? 'mistake' : 'mistakes'} · {r.hints} {r.hints === 1 ? 'hint' : 'hints'}
                     </span>
                   </span>
-                  <span className="shrink-0 text-right text-[13px] text-muted">{when(r.finishedAt)}</span>
+                  <span className="shrink-0 text-right text-[0.8125rem] text-muted">{when(r.finishedAt)}</span>
                 </li>
               ))}
             </ul>
