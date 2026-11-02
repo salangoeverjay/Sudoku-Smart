@@ -1,0 +1,32 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+    <meta name="description" content="Sudoku Smart: a beginner-friendly Sudoku with hints, notes, undo and a guided tutorial." />
+    <title>Sudoku Smart</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Instrument+Sans:wght@400;500;600&family=Instrument+Serif&display=swap" rel="stylesheet" />
+    <script>
+      // Apply the saved theme before first paint so the page never flashes the wrong one.
+      try {
+        // ?theme=light|dark|system sets the theme from a link (handy when presenting).
+        var q = new URLSearchParams(location.search).get('theme');
+        if (q === 'light' || q === 'dark' || q === 'system') {
+          var saved = JSON.parse(localStorage.getItem('sudoku-smart:settings') || '{}');
+          saved.theme = q;
+          localStorage.setItem('sudoku-smart:settings', JSON.stringify(saved));
+        }
+        var t = (JSON.parse(localStorage.getItem('sudoku-smart:settings') || '{}').theme) || 'system';
+        if (t === 'system') t = matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+        document.documentElement.dataset.theme = t;
+      } catch (e) {}
+    </script>
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>

@@ -1,0 +1,478 @@
+import { motion } from 'motion/react'
+import { Check, Eraser, Lightbulb, Pause, PencilLine, Play, Redo2, RotateCcw, Undo2 } from 'lucide-react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { Board } from '../components/Board'
+import { Dialog } from '../components/Dialog'
+import { Button } from '../components/ui'
+import {
+  applyHint,
+  digitCounts,
+  eraseCell,
+  isWrong,
+  placeValue,
+  redo,
+  restart,
+  toggleNote,
+  undo,
+  type MoveResult,
+} from '../lib/game'
+import { play } from '../lib/sound'
+import type { Difficulty } from '../lib/sudoku'
+import { DIFFICULTY_LABEL, formatTime, progressOf, type Game, type Screen, type Settings, type Stats } from '../lib/store'
+import { Celebration } from './Celebration'
+
+type Tone = 'info' | 'error' | 'hint'
+
+export function GameScreen({
+  game,
+  setGame,
+  settings,
+  stats,
+  onWin,
+  onNewGame,
+  onNavigate,
+}: {
+  game: Game
+  setGame: (fn: (g: Game | null) => Game | null) => void
+  settings: Settings
+  stats: Stats
+  onWin: (g: Game) => { best: boolean; first: boolean }
+  onNewGame: (d: Difficulty) => void
+  onNavigate: (s: Screen) => void
+}) {
+  const [selected, setSelected] = useState<number | null>(() => {
+    const first = game.values.findIndex((v) => !v)
+    return first === -1 ? null : first
+  })
+  const [notesMode, setNotesMode] = useState(false)
+  const [paused, setPaused] = useState(false)
+  const [message, setMessage] = useState<{ text: string; tone: Tone } | null>(null)
+  const [confirmRestart, setConfirmRestart] = useState(false)
+  const [won, setWon] = useState<{ best: boolean; first: boolean } | null>(null)
+  const playing = game.status === 'playing'
+
+  // Timer: counts while the puzzle is open, unpaused and the tab is visible.
+  useEffect(() => {
+    if (paused || !playing) return
+    const id = setInterval(() => {
+      if (document.visibilityState !== 'visible') return
+      setGame((g) => (g && g.status === 'playing' ? { ...g, elapsed: g.elapsed + 1 } : g))
+    }, 1000)
+    return () => clearInterval(id)
+  }, [paused, playing, setGame])
+
+  // Leaving the tab pauses the game, so the clock is fair.
+  useEffect(() => {
+    const onHide = () => document.visibilityState === 'hidden' && playing && setPaused(true)
+    document.addEventListener('visibilitychange', onHide)
+    return () => document.removeEventListener('visibilitychange', onHide)
+  }, [playing])
+
+  const apply = useCallback(
+    (r: MoveResult) => {
+      if (r.event === 'none') return
+      // Keep the clock from the latest state; the move was computed from this render's game.
+      setGame((prev) => ({ ...r.game, elapsed: prev?.elapsed ?? r.game.elapsed }))
+      const cue = r.event === 'mistake' ? 'error' : r.event === 'won' ? 'win' : r.event === 'erased' ? 'erase' : r.event === 'note' ? 'note' : r.event === 'hint' ? 'hint' : 'place'
+      play(cue, settings.sound)
+      if (r.event === 'mistake') setMessage({ text: r.message!, tone: 'error' })
+      else if (r.event === 'hint') setMessage({ text: r.message!, tone: 'hint' })
+      else if (r.message) setMessage({ text: r.message, tone: 'info' })
+      else setMessage(null)
+      if (r.cell !== undefined && r.event === 'hint') setSelected(r.cell)
+      if (r.event === 'won') {
+        const result = onWin(r.game)
+        setSelected(null)
+        // Let the board's wave finish before the dialog covers it.
+        setTimeout(() => setWon(result), settings.animations ? 900 : 0)
+      }
+    },
+    [setGame, settings.sound, settings.animations, onWin],
+  )
+
+  const input = useCallback(
+    (digit: number, asNote = notesMode) => {
+      if (selected === null || paused) return
+      apply(asNote ? toggleNote(game, selected, digit) : placeValue(game, selected, digit, settings))
+    },
+    [selected, paused, notesMode, game, settings, apply],
+  )
+
+  const erase = useCallback(() => {
+    if (selected === null || paused) return
+    if (game.hinted.includes(selected)) setMessage({ text: 'Numbers from hints stay on the board.', tone: 'info' })
+    apply(eraseCell(game, selected))
+  }, [selected, paused, game, apply])
+
+  const hint = useCallback(() => {
+    if (paused) return
+    if (game.hintsLeft <= 0) {
+      setMessage({ text: 'No hints left for this puzzle. Try notes: pencil in what each cell could be.', tone: 'info' })
+      return
+    }
+    apply(applyHint(game, selected, settings))
+  }, [paused, game, selected, settings, apply])
+
+  const doUndo = useCallback(() => {
+    if (paused || !game.history.length) return
+    setGame((g) => (g ? undo(g) : g))
+    play('tap', settings.sound)
+    setMessage(null)
+  }, [paused, game.history.length, setGame, settings.sound])
+
+  const doRedo = useCallback(() => {
+    if (paused || !game.future.length) return
+    setGame((g) => (g ? redo(g) : g))
+    play('tap', settings.sound)
+  }, [paused, game.future.length, setGame, settings.sound])
+
+  const togglePause = useCallback(() => {
+    if (!playing) return
+    setPaused((p) => !p)
+    play('tap', settings.sound)
+  }, [playing, settings.sound])
+
+  // Keyboard: arrows move, digits place (Shift + digit pencils a note), N notes, H hint, P pause.
+  const keyRef = useRef<(e: KeyboardEvent) => void>(() => {})
+  useEffect(() => {
+    keyRef.current = (e: KeyboardEvent) => {
+      if (document.querySelector('[role="dialog"]')) return
+      const t = e.target as HTMLElement
+      if (t.tagName === 'INPUT' || t.tagName === 'TEXTAREA') return
+      const mod = e.ctrlKey || e.metaKey
+      if (mod && e.key.toLowerCase() === 'z') {
+        e.preventDefault()
+        if (e.shiftKey) doRedo()
+        else doUndo()
+        return
+      }
+      if (mod && e.key.toLowerCase() === 'y') {
+        e.preventDefault()
+        doRedo()
+        return
+      }
+      if (mod || e.altKey) return
+      if (e.key === 'p' || e.key === 'P') return togglePause()
+      if (paused) return
+      const digit = /^(Digit|Numpad)([1-9])$/.exec(e.code)
+      if (digit) {
+        e.preventDefault()
+        return input(Number(digit[2]), e.shiftKey ? !notesMode : notesMode)
+      }
+      const move: Record<string, [number, number]> = {
+        ArrowUp: [-1, 0],
+        ArrowDown: [1, 0],
+        ArrowLeft: [0, -1],
+        ArrowRight: [0, 1],
+      }
+      if (move[e.key]) {
+        e.preventDefault()
+        const cur = selected ?? 40
+        const r = (Math.floor(cur / 9) + move[e.key][0] + 9) % 9
+        const c = ((cur % 9) + move[e.key][1] + 9) % 9
+        setSelected(r * 9 + c)
+        return
+      }
+      if (e.key === 'Backspace' || e.key === 'Delete' || e.key === '0') {
+        e.preventDefault()
+        return erase()
+      }
+      if (e.key === 'n' || e.key === 'N') return setNotesMode((m) => !m)
+      if (e.key === 'h' || e.key === 'H') return hint()
+      if (e.key === 'Escape') setSelected(null)
+    }
+  })
+  useEffect(() => {
+    const h = (e: KeyboardEvent) => keyRef.current(e)
+    window.addEventListener('keydown', h)
+    return () => window.removeEventListener('keydown', h)
+  }, [])
+
+  const errors = useMemo(() => {
+    const s = new Set<number>()
+    if (settings.errorChecking) game.values.forEach((_, i) => isWrong(game, i) && s.add(i))
+    return s
+  }, [game, settings.errorChecking])
+
+  const counts = useMemo(() => digitCounts(game), [game])
+  const progress = progressOf(game)
+  const label = DIFFICULTY_LABEL[game.difficulty]
+  const guidance = notesMode
+    ? 'Notes are on. Numbers you choose are pencilled in as reminders. Press N or the Notes button to switch back.'
+    : selected === null
+      ? 'Select a cell, then choose a number.'
+      : game.puzzle[selected]
+        ? 'This number was given at the start. Choose an empty cell to fill.'
+        : 'Choose a number for the selected cell. Use Notes to pencil in options first.'
+
+  const tools = [
+    { id: 'undo', label: 'Undo', icon: Undo2, onClick: doUndo, disabled: !game.history.length, keys: 'Ctrl Z' },
+    { id: 'redo', label: 'Redo', icon: Redo2, onClick: doRedo, disabled: !game.future.length, keys: 'Ctrl Y' },
+    { id: 'erase', label: 'Erase', icon: Eraser, onClick: erase, disabled: false, keys: 'Delete' },
+    { id: 'notes', label: notesMode ? 'Notes on' : 'Notes', icon: PencilLine, onClick: () => setNotesMode((m) => !m), disabled: false, pressed: notesMode, keys: 'N' },
+    { id: 'hint', label: 'Hint', icon: Lightbulb, onClick: hint, disabled: false, badge: game.hintsLeft, keys: 'H' },
+  ]
+
+  return (
+    <div className="mx-auto w-full max-w-[1120px] px-4 pt-5 pb-10 sm:px-6 lg:px-10 lg:pt-9">
+      <div className="grid gap-x-10 gap-y-3 lg:grid-cols-[minmax(0,1fr)_344px] lg:items-start lg:gap-y-4">
+        {/* Title row */}
+        <div className="flex items-end justify-between gap-4 lg:col-span-2">
+          <div className="min-w-0">
+            <h1 className="text-[22px] leading-tight font-semibold tracking-[-0.01em] text-ink lg:text-2xl">{label} puzzle</h1>
+            <p className="mt-1 text-sm text-muted">
+              {progress.total - progress.filled} of {progress.total} cells left to fill
+            </p>
+          </div>
+          <div className="flex items-center gap-2">
+            <span className="num text-[22px] text-ink lg:text-2xl" aria-label={`Time ${formatTime(game.elapsed)}`} role="timer">
+              {formatTime(game.elapsed)}
+            </span>
+            <button
+              type="button"
+              onClick={togglePause}
+              disabled={!playing}
+              aria-label={paused ? 'Resume game' : 'Pause game'}
+              aria-keyshortcuts="P"
+              className="flex h-11 w-11 items-center justify-center rounded-full border border-control bg-surface text-ink transition-colors hover:bg-panel active:scale-95 disabled:opacity-50"
+            >
+              {paused ? <Play size={18} strokeWidth={1.75} /> : <Pause size={18} strokeWidth={1.75} />}
+            </button>
+          </div>
+        </div>
+
+        {/* Phone: one compact line of status so board, tools and keypad share the first screen */}
+        <div className="flex items-center gap-4 text-sm lg:hidden" aria-hidden="true">
+          <span className="text-muted">
+            Mistakes <span className={`num ${game.mistakes ? 'text-negative' : 'text-ink'}`}>{game.mistakes}</span>
+          </span>
+          <span className="text-muted">
+            Hints <span className="num text-ink">{game.hintsLeft}</span>
+          </span>
+          <span className="flex flex-1 items-center gap-2">
+            <span className="h-1.5 flex-1 overflow-hidden rounded-full bg-active">
+              <span className="block h-full rounded-full bg-accent transition-[width] duration-300" style={{ width: `${progress.pct}%` }} />
+            </span>
+            <span className="num text-ink">{progress.pct}%</span>
+          </span>
+        </div>
+
+        {/* Board */}
+        <div className="relative w-full max-w-[600px] justify-self-center lg:row-span-4 lg:justify-self-stretch">
+          <Board
+            values={game.values}
+            givens={game.puzzle}
+            notes={game.notes}
+            selected={paused ? null : selected}
+            onSelect={(i) => {
+              setSelected(i)
+              if (paused) setPaused(false)
+            }}
+            errors={errors}
+            hinted={game.hinted}
+            highlightPeers={settings.highlightPeers}
+            highlightMatching={settings.highlightMatching}
+            celebrate={game.status === 'won'}
+            hidden={paused}
+            label={`${label} Sudoku board`}
+          />
+          {paused && (
+            <div className="absolute inset-0 flex flex-col items-center justify-center gap-4 rounded-2xl bg-panel p-6 text-center">
+              <p className="font-serif text-4xl text-ink">Paused</p>
+              <p className="num text-sm text-muted">
+                {formatTime(game.elapsed)} on the clock · {progress.pct}% solved
+              </p>
+              <Button variant="primary" onClick={togglePause} data-autofocus>
+                <Play size={16} strokeWidth={2} aria-hidden="true" />
+                Resume
+              </Button>
+            </div>
+          )}
+        </div>
+
+        {/* Status: mistakes, hints, progress */}
+        <section aria-label="Game status" className="rounded-[20px] bg-panel p-5 max-lg:sr-only">
+          <dl className="grid grid-cols-3 divide-x divide-border">
+            <div className="pr-3">
+              <dt className="text-xs text-muted">Mistakes</dt>
+              <dd className={`num mt-1 text-xl ${game.mistakes ? 'text-negative' : 'text-ink'}`}>{game.mistakes}</dd>
+            </div>
+            <div className="px-3">
+              <dt className="text-xs text-muted">Hints left</dt>
+              <dd className="num mt-1 text-xl text-ink">
+                {game.hintsLeft}
+                <span className="text-sm text-faint"> /3</span>
+              </dd>
+            </div>
+            <div className="pl-3">
+              <dt className="text-xs text-muted">Solved</dt>
+              <dd className="num mt-1 text-xl text-ink">
+                {progress.pct}
+                <span className="text-sm text-faint">%</span>
+              </dd>
+            </div>
+          </dl>
+          <div
+            className="mt-4 h-2 overflow-hidden rounded-full bg-active"
+            role="progressbar"
+            aria-label="Puzzle progress"
+            aria-valuenow={progress.filled}
+            aria-valuemin={0}
+            aria-valuemax={progress.total}
+          >
+            <motion.div
+              className="h-full rounded-full bg-accent"
+              initial={false}
+              animate={{ width: `${progress.pct}%` }}
+              transition={{ duration: 0.35, ease: 'easeOut' }}
+            />
+          </div>
+        </section>
+
+        {/* Live message */}
+        <p
+          aria-live="polite"
+          className={`min-h-10 text-sm leading-5 ${
+            message?.tone === 'error' ? 'text-negative' : message?.tone === 'hint' ? 'text-accent' : 'text-muted'
+          }`}
+        >
+          {message?.text ?? guidance}
+        </p>
+
+        {/* Tools and keypad */}
+        <div className="space-y-3">
+          <div className="grid grid-cols-5 gap-1.5" role="toolbar" aria-label="Game tools">
+            {tools.map((t) => {
+              const Icon = t.icon
+              return (
+                <button
+                  key={t.id}
+                  type="button"
+                  onClick={t.onClick}
+                  disabled={t.disabled || paused || !playing}
+                  aria-pressed={t.pressed}
+                  aria-keyshortcuts={t.keys}
+                  title={`${t.label} (${t.keys})`}
+                  className={`relative flex h-16 flex-col items-center justify-center gap-1 rounded-2xl text-xs font-medium transition-[background-color,color,transform] duration-150 active:scale-95 disabled:opacity-40 ${
+                    t.pressed ? 'bg-accent-soft text-accent' : 'text-muted hover:bg-active hover:text-ink'
+                  }`}
+                >
+                  <Icon size={20} strokeWidth={1.75} aria-hidden="true" />
+                  {t.label}
+                  {t.badge !== undefined && (
+                    <span className="num absolute top-1.5 right-[calc(50%-22px)] flex h-[18px] min-w-[18px] items-center justify-center rounded-full bg-accent px-1 text-[11px] font-semibold text-surface">
+                      {t.badge}
+                    </span>
+                  )}
+                </button>
+              )
+            })}
+          </div>
+
+          <div className="grid grid-cols-9 gap-1 lg:grid-cols-3 lg:gap-2" role="group" aria-label={notesMode ? 'Pencil a note' : 'Place a number'}>
+            {[1, 2, 3, 4, 5, 6, 7, 8, 9].map((d) => {
+              const left = 9 - counts[d]
+              const done = left <= 0
+              return (
+                <button
+                  key={d}
+                  type="button"
+                  onClick={() => input(d)}
+                  disabled={paused || !playing || (done && !notesMode)}
+                  aria-label={`${notesMode ? 'Note' : 'Place'} ${d}, ${done ? 'all placed' : `${left} left`}`}
+                  className={`flex h-14 flex-col items-center justify-center rounded-xl bg-surface text-ink ring-1 ring-border transition-[background-color,transform] duration-150 hover:bg-accent-soft active:scale-95 disabled:opacity-35 lg:h-[72px] lg:rounded-2xl ${
+                    notesMode ? 'text-accent' : ''
+                  }`}
+                >
+                  <span className={`num leading-none ${notesMode ? 'text-lg lg:text-xl' : 'text-2xl lg:text-[28px]'}`}>{d}</span>
+                  {done ? (
+                    <Check size={12} strokeWidth={2.25} className="mt-1 text-positive" aria-hidden="true" />
+                  ) : (
+                    <span className="num mt-1 text-[11px] leading-none text-faint">{left}</span>
+                  )}
+                </button>
+              )
+            })}
+          </div>
+
+          <div className="flex items-center justify-between pt-1">
+            <Button variant="ghost" className="-ml-3 h-10 px-3 text-sm" onClick={() => setConfirmRestart(true)} disabled={!playing}>
+              <RotateCcw size={15} strokeWidth={1.75} aria-hidden="true" />
+              Restart puzzle
+            </Button>
+            <Button variant="ghost" className="-mr-3 h-10 px-3 text-sm" onClick={() => onNavigate('difficulty')}>
+              New game
+            </Button>
+          </div>
+          <p className="hidden text-xs leading-5 text-faint lg:block">
+            Keyboard: arrows to move, 1–9 to place, Shift + number for a note, N notes, H hint, P pause.
+          </p>
+        </div>
+      </div>
+
+      <Dialog open={confirmRestart} onClose={() => setConfirmRestart(false)} labelledBy="restart-title">
+        <h2 id="restart-title" className="text-xl font-semibold text-ink">
+          Restart this puzzle?
+        </h2>
+        <p className="mt-2 text-[15px] leading-6 text-muted">
+          Your numbers and notes are cleared and the clock goes back to 0:00. The given numbers stay the same.
+        </p>
+        <div className="mt-6 flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
+          <Button onClick={() => setConfirmRestart(false)} data-autofocus>
+            Keep playing
+          </Button>
+          <Button
+            variant="primary"
+            onClick={() => {
+              setGame((g) => (g ? restart(g) : g))
+              setConfirmRestart(false)
+              setPaused(false)
+              setMessage(null)
+            }}
+          >
+            Restart
+          </Button>
+        </div>
+      </Dialog>
+
+      <Dialog open={!!won} onClose={() => setWon(null)} labelledBy="win-title" wide>
+        {settings.animations && <Celebration />}
+        <div className="relative">
+          <h2 id="win-title" className="font-serif text-[44px] leading-none text-ink">
+            Solved.
+          </h2>
+          <p className="mt-3 text-[15px] leading-6 text-muted">
+            {won?.first
+              ? `Your first ${label} puzzle is done. That time is now your best.`
+              : won?.best
+                ? `A new best time for ${label}.`
+                : `Your best ${label} time is ${formatTime(stats.best[game.difficulty] ?? game.elapsed)}.`}
+          </p>
+          <dl className="mt-6 grid grid-cols-3 divide-x divide-border rounded-2xl bg-panel py-4">
+            <div className="px-4">
+              <dt className="text-xs text-muted">Time</dt>
+              <dd className="num mt-1 text-xl text-ink">{formatTime(game.elapsed)}</dd>
+            </div>
+            <div className="px-4">
+              <dt className="text-xs text-muted">Mistakes</dt>
+              <dd className="num mt-1 text-xl text-ink">{game.mistakes}</dd>
+            </div>
+            <div className="px-4">
+              <dt className="text-xs text-muted">Hints used</dt>
+              <dd className="num mt-1 text-xl text-ink">{3 - game.hintsLeft}</dd>
+            </div>
+          </dl>
+          <div className="mt-6 flex flex-col gap-2">
+            <Button variant="primary" onClick={() => onNewGame(game.difficulty)} data-autofocus>
+              Play another {label} puzzle
+            </Button>
+            <div className="grid grid-cols-2 gap-2">
+              <Button onClick={() => onNavigate('difficulty')}>Change level</Button>
+              <Button onClick={() => onNavigate('home')}>Home</Button>
+            </div>
+          </div>
+        </div>
+      </Dialog>
+    </div>
+  )
+}

@@ -1,0 +1,133 @@
+@import "tailwindcss";
+
+@custom-variant dark (&:where([data-theme="dark"], [data-theme="dark"] *));
+
+/*
+  Tokens. The brand asks for lavender, purple and blue, so the style's roles are mapped onto them:
+  a lavender-white ground, lavender tonal panels, deep violet ink, violet for the one action and the
+  selection, blue for the numbers the player writes. Givens stay in ink so the two read apart.
+*/
+:root {
+  --ground: #fbfaff;
+  --surface: #ffffff;
+  --panel: #f3f1fb;
+  --active: #e8e4f6;
+  --border: #e3dff0;
+  --rule: #ece9f5;
+  --control: #cdc6e2;
+
+  --text: #1c1830;
+  --muted: #555169;
+  --faint: #67637c;
+
+  --accent: #5b3fd0;
+  --accent-hover: #4c32b8;
+  --accent-soft: #ebe6fd;
+  --entry: #2a5bd0;
+
+  --cell: #ffffff;
+  --cell-peer: #f1eefb;
+  --cell-same: #ddd4fb;
+  --cell-selected: #c6b7f8;
+  --line: #e2ddf0;
+  --line-box: #8f86b3;
+
+  --positive: #1f7a4d;
+  --negative: #c4242a;
+  --negative-soft: #fdecee;
+
+  --font: "Instrument Sans", Inter, system-ui, sans-serif;
+  --serif: "Instrument Serif", Georgia, serif;
+  color-scheme: light;
+}
+
+:root[data-theme="dark"] {
+  --ground: #0f0e14;
+  --surface: #17151f;
+  --panel: #1b1924;
+  --active: #2a2638;
+  --border: #2b2837;
+  --rule: #23202e;
+  --control: #4a4560;
+
+  --text: #f3f1fa;
+  --muted: #b5b0c8;
+  --faint: #9a95ad;
+
+  --accent: #a28dff;
+  --accent-hover: #b4a3ff;
+  --accent-soft: #2b2546;
+  --entry: #8eb0ff;
+
+  --cell: #17151f;
+  --cell-peer: #211e2d;
+  --cell-same: #342c55;
+  --cell-selected: #4a3d86;
+  --line: #2b2837;
+  --line-box: #6f6894;
+
+  --positive: #4cc286;
+  --negative: #ff7b88;
+  --negative-soft: #3a1c24;
+  color-scheme: dark;
+}
+
+@theme inline {
+  --color-ground: var(--ground);
+  --color-surface: var(--surface);
+  --color-panel: var(--panel);
+  --color-active: var(--active);
+  --color-border: var(--border);
+  --color-rule: var(--rule);
+  --color-control: var(--control);
+  --color-ink: var(--text);
+  --color-muted: var(--muted);
+  --color-faint: var(--faint);
+  --color-accent: var(--accent);
+  --color-accent-hover: var(--accent-hover);
+  --color-accent-soft: var(--accent-soft);
+  --color-entry: var(--entry);
+  --color-positive: var(--positive);
+  --color-negative: var(--negative);
+  --color-negative-soft: var(--negative-soft);
+  --font-sans: var(--font);
+  --font-serif: var(--serif);
+}
+
+html,
+body {
+  background: var(--ground);
+  color: var(--text);
+  font-family: var(--font);
+  -webkit-font-smoothing: antialiased;
+}
+
+body {
+  margin: 0;
+  min-height: 100dvh;
+}
+
+.num {
+  font-variant-numeric: tabular-nums;
+}
+
+:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+::selection {
+  background: var(--accent-soft);
+}
+
+/* On the dark theme the violet button carries dark text so its label keeps 4.5:1. */
+.btn-primary {
+  background: var(--accent);
+  color: #fff;
+}
+.btn-primary:hover {
+  background: var(--accent-hover);
+}
+:root[data-theme="dark"] .btn-primary {
+  color: #120f1f;
+}
