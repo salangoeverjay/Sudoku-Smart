@@ -3,20 +3,20 @@ import { useRef, useState, type KeyboardEvent } from 'react'
 import { Board } from '../components/Board'
 import { Button } from '../components/ui'
 import { generatePuzzle, type Difficulty, type Grid } from '../lib/sudoku'
-import { DIFFICULTY_LABEL, formatTime, type Game, type Screen, type Stats } from '../lib/store'
+import { DIFFICULTY_LABEL, SIZE_LABEL, formatTime, type Game, type Screen, type Stats } from '../lib/store'
 
 const LEVELS: { id: Difficulty; blurb: string }[] = [
   {
     id: 'easy',
-    blurb: 'More numbers already filled. Most empty cells can be found by checking a single row, column or box.',
+    blurb: 'A small 4×4 board with numbers 1 to 4 and four 2×2 boxes. The best place to learn the rules.',
   },
   {
     id: 'medium',
-    blurb: 'Balanced difficulty. You will compare rows and columns together and use notes now and then.',
+    blurb: 'A 6×6 board with numbers 1 to 6. Each box is 2 rows by 3 columns, so compare rows and columns together.',
   },
   {
     id: 'hard',
-    blurb: 'Fewer numbers provided. Expect to pencil in notes and work through several steps before a cell is certain.',
+    blurb: 'The classic 9×9 board with nine 3×3 boxes and fewer numbers given. Expect to use notes.',
   },
 ]
 
@@ -83,8 +83,12 @@ export function DifficultyScreen({
             >
               <div className="flex items-start justify-between gap-3">
                 <span>
-                  <span className="block text-xl font-semibold text-ink">{DIFFICULTY_LABEL[lvl.id]}</span>
-                  <span className="num mt-0.5 block text-sm text-muted">{given} of 81 numbers given</span>
+                  <span className="block text-xl font-semibold text-ink">
+                    {DIFFICULTY_LABEL[lvl.id]} <span className="num font-normal text-muted">{SIZE_LABEL[lvl.id]}</span>
+                  </span>
+                  <span className="num mt-0.5 block text-sm text-muted">
+                    {given} of {p.puzzle.length} numbers given
+                  </span>
                 </span>
                 <span
                   aria-hidden="true"
@@ -97,7 +101,7 @@ export function DifficultyScreen({
               </div>
               <span className="mt-3 block text-[0.9375rem] leading-6 text-ink md:min-h-[72px]">{lvl.blurb}</span>
               <div className="mt-4 grid grid-cols-[96px_1fr] items-end gap-4 md:block">
-                <Board decorative values={p.puzzle} givens={p.puzzle} label={`${DIFFICULTY_LABEL[lvl.id]} puzzle preview`} className="md:mx-auto md:max-w-[260px]" />
+                <Board decorative n={Math.round(Math.sqrt(p.puzzle.length)) as 4 | 6 | 9} values={p.puzzle} givens={p.puzzle} label={`${DIFFICULTY_LABEL[lvl.id]} puzzle preview`} className="md:mx-auto md:max-w-[260px]" />
                 <span className="text-[0.8125rem] text-muted md:mt-3 md:block">
                   {best !== null ? (
                     <>
@@ -133,7 +137,7 @@ export function DifficultyScreen({
             </Button>
           )}
           <Button variant="primary" onClick={() => onStart(choice, puzzles[choice])}>
-            Start {DIFFICULTY_LABEL[choice]} game
+            Start {DIFFICULTY_LABEL[choice]} {SIZE_LABEL[choice]} game
           </Button>
         </div>
       </div>

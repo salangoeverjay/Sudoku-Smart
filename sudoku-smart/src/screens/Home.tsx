@@ -1,8 +1,8 @@
 import { BookOpen, ChevronRight, Grid3x3, Play, Settings as Cog } from 'lucide-react'
 import { Board } from '../components/Board'
 import { Button } from '../components/ui'
-import { CLUES, type Difficulty } from '../lib/sudoku'
-import { DIFFICULTY_LABEL, formatTime, HINTS_PER_GAME, progressOf, type Game, type Screen, type Stats } from '../lib/store'
+import { sizeOf, type Difficulty } from '../lib/sudoku'
+import { DIFFICULTY_LABEL, SIZE_LABEL, formatTime, HINTS_PER_GAME, progressOf, type Game, type Screen, type Stats } from '../lib/store'
 
 const LEVELS: Difficulty[] = ['easy', 'medium', 'hard']
 
@@ -93,6 +93,7 @@ export function Home({
               aria-label={game ? 'Open the puzzle in progress' : 'Start a new game'}
             >
               <Board
+                n={(game ? sizeOf(game.puzzle) : 9) as 4 | 6 | 9}
                 values={game?.values ?? new Array(81).fill(0)}
                 givens={game?.puzzle ?? new Array(81).fill(0)}
                 notes={game?.notes}
@@ -108,7 +109,7 @@ export function Home({
               {game && progress ? (
                 <>
                   <p className="mt-2 text-2xl text-ink">
-                    {DIFFICULTY_LABEL[game.difficulty]} · <span className="num">{progress.filled}</span>
+                    {DIFFICULTY_LABEL[game.difficulty]} {SIZE_LABEL[game.difficulty]} · <span className="num">{progress.filled}</span>
                     <span className="text-muted"> of </span>
                     <span className="num">{progress.total}</span>
                     <span className="text-muted"> cells</span>
@@ -211,7 +212,7 @@ export function Home({
             <thead>
               <tr className="text-left text-xs text-muted">
                 <th className="py-2 font-normal">Level</th>
-                <th className="py-2 text-right font-normal max-sm:big-text:hidden">Numbers given</th>
+                <th className="py-2 text-right font-normal max-sm:big-text:hidden">Board</th>
                 <th className="py-2 text-right font-normal">Solved</th>
                 <th className="py-2 text-right font-normal">Best time</th>
               </tr>
@@ -220,7 +221,7 @@ export function Home({
               {LEVELS.map((d) => (
                 <tr key={d} className="border-t border-rule">
                   <td className="h-12 text-[0.9375rem] text-ink">{DIFFICULTY_LABEL[d]}</td>
-                  <td className="num text-right text-muted max-sm:big-text:hidden">about {CLUES[d]}</td>
+                  <td className="num text-right text-muted max-sm:big-text:hidden">{SIZE_LABEL[d]}</td>
                   <td className="num text-right text-ink">{stats.won[d]}</td>
                   <td className={`num text-right ${stats.best[d] !== null ? 'text-ink' : 'text-faint'}`}>
                     {stats.best[d] !== null ? formatTime(stats.best[d]!) : '—'}
@@ -246,7 +247,7 @@ export function Home({
                 <li key={r.id} className="flex min-h-[3.25rem] items-center justify-between gap-4 border-t border-rule first:border-t-0">
                   <span className="min-w-0">
                     <span className="block text-[0.9375rem] text-ink">
-                      {DIFFICULTY_LABEL[r.difficulty]} in <span className="num">{formatTime(r.seconds)}</span>
+                      {DIFFICULTY_LABEL[r.difficulty]} {SIZE_LABEL[r.difficulty]} in <span className="num">{formatTime(r.seconds)}</span>
                     </span>
                     <span className="block text-[0.8125rem] text-muted">
                       {r.mistakes} {r.mistakes === 1 ? 'mistake' : 'mistakes'} · {r.hints} {r.hints === 1 ? 'hint' : 'hints'}

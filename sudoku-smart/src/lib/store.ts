@@ -119,7 +119,8 @@ export function loadGame(): Game | null {
     const raw = localStorage.getItem(KEY.game)
     if (!raw) return null
     const g = JSON.parse(raw) as Game
-    return g.status === 'playing' && g.values?.length === 81 ? g : null
+    // A board of 16, 36 or 81 cells: 4×4, 6×6 or 9×9 (games saved before the sizes existed are 9×9).
+    return g.status === 'playing' && [16, 36, 81].includes(g.values?.length) && g.puzzle?.length === g.values.length ? g : null
   } catch {
     return null
   }
@@ -129,6 +130,8 @@ export const saveGame = (g: Game | null) =>
   write(KEY.game, g && g.status === 'playing' ? { ...g, history: [], future: [] } : null)
 
 export const DIFFICULTY_LABEL: Record<Difficulty, string> = { easy: 'Easy', medium: 'Medium', hard: 'Hard' }
+/** The board each level plays on. */
+export const SIZE_LABEL: Record<Difficulty, string> = { easy: '4×4', medium: '6×6', hard: '9×9' }
 
 export function formatTime(total: number): string {
   const s = Math.max(0, Math.floor(total))
@@ -142,7 +145,7 @@ export function formatTime(total: number): string {
 export function progressOf(g: Game): { filled: number; total: number; pct: number } {
   let total = 0
   let filled = 0
-  for (let i = 0; i < 81; i++) {
+  for (let i = 0; i < g.puzzle.length; i++) {
     if (g.puzzle[i]) continue
     total++
     if (g.values[i] && g.values[i] === g.solution[i]) filled++

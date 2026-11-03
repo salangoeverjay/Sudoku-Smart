@@ -1,4 +1,4 @@
-import { candidatesAt, explainMistake, generatePuzzle, PEERS, type Difficulty } from './sudoku'
+import { candidatesAt, explainMistake, generatePuzzle, peersOf, sizeOf, type Difficulty } from './sudoku'
 import { HINTS_PER_GAME, type Game, type Settings, type Snapshot } from './store'
 
 export type MoveEvent = 'placed' | 'mistake' | 'won' | 'note' | 'erased' | 'hint' | 'none'
@@ -23,7 +23,7 @@ export function newGame(
     puzzle,
     solution,
     values: puzzle.slice(),
-    notes: new Array(81).fill(0),
+    notes: new Array(puzzle.length).fill(0),
     hinted: [],
     mistakes: 0,
     hintsLeft: HINTS_PER_GAME,
@@ -48,7 +48,7 @@ export const isWrong = (g: Game, i: number) => !!g.values[i] && g.values[i] !== 
 /** Clear `digit` from the pencil marks of every peer of `i`. */
 function clearPeerNotes(notes: number[], i: number, digit: number) {
   const bit = 1 << digit
-  for (const j of PEERS[i]) notes[j] &= ~bit
+  for (const j of peersOf(sizeOf(notes))[i]) notes[j] &= ~bit
 }
 
 export function placeValue(g: Game, i: number, digit: number, s: Settings): MoveResult {
@@ -104,10 +104,10 @@ export function applyHint(g: Game, selected: number | null, s: Settings): MoveRe
   let target = -1
   if (selected !== null && !g.puzzle[selected] && g.values[selected] !== g.solution[selected]) target = selected
   if (target === -1) {
-    let fewest = 10
-    for (let i = 0; i < 81; i++) {
+    let fewest = Infinity
+    for (let i = 0; i < g.values.length; i++) {
       if (g.values[i] === g.solution[i]) continue
-      const n = g.values[i] ? 10 : candidatesAt(g.values, i).length
+      const n = g.values[i] ? 99 : candidatesAt(g.values, i).length
       if (n < fewest || target === -1) {
         fewest = n
         target = i
@@ -131,7 +131,7 @@ export function applyHint(g: Game, selected: number | null, s: Settings): MoveRe
     game,
     event: game.status === 'won' ? 'won' : 'hint',
     cell: target,
-    message: `Hint: ${digit} goes in row ${Math.floor(target / 9) + 1}, column ${(target % 9) + 1}.`,
+    message: `Hint: ${digit} goes in row ${Math.floor(target / sizeOf(g.values)) + 1}, column ${(target % sizeOf(g.values)) + 1}.`,
   }
 }
 
@@ -152,7 +152,7 @@ export function restart(g: Game): Game {
   return {
     ...g,
     values: g.puzzle.slice(),
-    notes: new Array(81).fill(0),
+    notes: new Array(g.puzzle.length).fill(0),
     hinted: [],
     mistakes: 0,
     hintsLeft: HINTS_PER_GAME,

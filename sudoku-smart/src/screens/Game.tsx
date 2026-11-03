@@ -19,8 +19,8 @@ import {
 } from '../lib/game'
 import { play } from '../lib/sound'
 import { speak, stopSpeech } from '../lib/speech'
-import type { Difficulty } from '../lib/sudoku'
-import { DIFFICULTY_LABEL, formatTime, progressOf, type Game, type Screen, type Settings, type Stats } from '../lib/store'
+import { sizeOf, type Difficulty } from '../lib/sudoku'
+import { DIFFICULTY_LABEL, SIZE_LABEL, formatTime, progressOf, type Game, type Screen, type Settings, type Stats } from '../lib/store'
 import { Celebration } from './Celebration'
 
 type Tone = 'info' | 'error' | 'hint'
@@ -62,6 +62,8 @@ export function GameScreen({
   const [announce, setAnnounce] = useState('')
   const { a11y, motionOk, muted, setMuted } = useA11y()
   const playing = game.status === 'playing'
+  // Board side: 4, 6 or 9, read from the puzzle itself.
+  const n = sizeOf(game.puzzle)
 
   // Timer: counts while the puzzle is open, unpaused and the tab is visible.
   useEffect(() => {
@@ -195,7 +197,7 @@ export function GameScreen({
       if (e.key === 'p' || e.key === 'P') return togglePause()
       if (paused) return
       const digit = /^(Digit|Numpad)([1-9])$/.exec(e.code)
-      if (digit) {
+      if (digit && Number(digit[2]) <= n) {
         e.preventDefault()
         return input(Number(digit[2]), e.shiftKey ? !notesMode : notesMode)
       }
@@ -207,10 +209,10 @@ export function GameScreen({
       }
       if (move[e.key]) {
         e.preventDefault()
-        const cur = selected ?? 40
-        const r = (Math.floor(cur / 9) + move[e.key][0] + 9) % 9
-        const c = ((cur % 9) + move[e.key][1] + 9) % 9
-        setSelected(r * 9 + c)
+        const cur = selected ?? Math.floor((n * n) / 2)
+        const r = (Math.floor(cur / n) + move[e.key][0] + n) % n
+        const c = ((cur % n) + move[e.key][1] + n) % n
+        setSelected(r * n + c)
         return
       }
       if (e.key === 'Backspace' || e.key === 'Delete' || e.key === '0') {
@@ -267,7 +269,7 @@ export function GameScreen({
           <div className="min-w-0">
             <h1 className="text-[1.375rem] leading-tight font-semibold tracking-[-0.01em] text-ink lg:text-2xl">{label} puzzle</h1>
             <p className="mt-1 text-sm text-muted">
-              {progress.total - progress.filled} of {progress.total} cells left to fill
+              {SIZE_LABEL[game.difficulty]} board · {progress.total - progress.filled} of {progress.total} cells left to fill
             </p>
           </div>
           <div className="flex items-center gap-2">
@@ -328,6 +330,7 @@ export function GameScreen({
           >
             <div style={a11y.boardZoom > 1 ? { width: `${a11y.boardZoom * 100}%` } : undefined}>
           <Board
+            n={n as 4 | 6 | 9}
             values={game.values}
             givens={game.puzzle}
             notes={game.notes}
@@ -442,9 +445,9 @@ export function GameScreen({
             })}
           </div>
 
-          <div className="grid grid-cols-9 gap-1 max-lg:big-text:grid-cols-5 lg:grid-cols-3 lg:gap-2" role="group" aria-label={notesMode ? 'Pencil a note' : 'Place a number'}>
-            {[1, 2, 3, 4, 5, 6, 7, 8, 9].map((d) => {
-              const left = 9 - counts[d]
+          <div className={`grid gap-1 lg:gap-2 ${KEYPAD_COLS[n]}`} role="group" aria-label={notesMode ? 'Pencil a note' : 'Place a number'}>
+            {Array.from({ length: n }, (_, k) => k + 1).map((d) => {
+              const left = n - counts[d]
               const done = left <= 0
               return (
                 <button
@@ -478,7 +481,7 @@ export function GameScreen({
             </Button>
           </div>
           <p className="hidden text-xs leading-5 text-faint lg:block">
-            Keyboard: arrows to move, 1–9 to place, Shift + number for a note, N notes, H hint, P pause.
+            Keyboard: arrows to move, 1–{n} to place, Shift + number for a note, N notes, H hint, P pause.
           </p>
         </div>
       </div>
@@ -550,6 +553,14 @@ export function GameScreen({
   )
 }
 
+// Keypad columns for each board size: one row on a phone, a square-ish block beside the board on desktop,
+// and fewer, wider keys on a phone when the text is set large.
+const KEYPAD_COLS: Record<number, string> = {
+  4: 'grid-cols-4 lg:grid-cols-2',
+  6: 'grid-cols-6 max-lg:big-text:grid-cols-3 lg:grid-cols-3',
+  9: 'grid-cols-9 max-lg:big-text:grid-cols-5 lg:grid-cols-3',
+}
+
 function notesText(mask: number) {
   const out: number[] = []
   for (let d = 1; d <= 9; d++) if (mask & (1 << d)) out.push(d)
@@ -558,7 +569,8 @@ function notesText(mask: number) {
 
 /** What spoken guidance reads for a cell: where it is, what it holds, and whether it can change. */
 function cellText(g: Game, i: number) {
-  const where = `Row ${Math.floor(i / 9) + 1}, column ${(i % 9) + 1}`
+  const n = sizeOf(g.puzzle)
+  const where = `Row ${Math.floor(i / n) + 1}, column ${(i % n) + 1}`
   const v = g.values[i]
   if (g.puzzle[i]) return `${where}, ${v}, fixed.`
   if (v) return `${where}, ${v}${v !== g.solution[i] ? ', incorrect' : ''}.`

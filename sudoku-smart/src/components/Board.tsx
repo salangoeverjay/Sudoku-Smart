@@ -2,11 +2,12 @@ import { motion } from 'motion/react'
 import { X } from 'lucide-react'
 import { useEffect, useId, useRef, type CSSProperties } from 'react'
 import { needsCues } from '../lib/a11y'
+import { shapeOf } from '../lib/sudoku'
 import { useA11y } from './A11yProvider'
 
 export interface BoardProps {
-  /** 9 for the game, 4 for the tutorial's mini puzzle. */
-  n?: 4 | 9
+  /** The board's side: 4, 6 or 9 for the three levels (the tutorial's practice board is 4). */
+  n?: 4 | 6 | 9
   values: number[]
   givens: number[]
   notes?: number[]
@@ -58,7 +59,8 @@ export function Board({
 }: BoardProps) {
   const { a11y, motionOk } = useA11y()
   const cues = needsCues(a11y)
-  const b = n === 9 ? 3 : 2
+  // Box height and width: 2×2 on 4×4, 2 rows × 3 columns on 6×6, 3×3 on 9×9.
+  const { bh, bw } = shapeOf(n)
   const ref = useRef<HTMLDivElement>(null)
   const mounted = useRef(false)
   const hatchId = useId()
@@ -78,7 +80,7 @@ export function Board({
 
   const row = (i: number) => Math.floor(i / n)
   const col = (i: number) => i % n
-  const box = (i: number) => Math.floor(row(i) / b) * b + Math.floor(col(i) / b)
+  const box = (i: number) => Math.floor(row(i) / bh) * (n / bw) + Math.floor(col(i) / bw)
   const selValue = selected !== null ? values[selected] : 0
   const interactive = !!onSelect
 
@@ -136,8 +138,8 @@ export function Board({
     const style: CSSProperties = {
       background: BG[tone],
       boxShadow: rings.join(', ') || undefined,
-      borderRight: c < n - 1 ? `${(c + 1) % b === 0 ? thick : thin}px solid var(${(c + 1) % b === 0 ? '--line-box' : '--line'})` : undefined,
-      borderBottom: r < n - 1 ? `${(r + 1) % b === 0 ? thick : thin}px solid var(${(r + 1) % b === 0 ? '--line-box' : '--line'})` : undefined,
+      borderRight: c < n - 1 ? `${(c + 1) % bw === 0 ? thick : thin}px solid var(${(c + 1) % bw === 0 ? '--line-box' : '--line'})` : undefined,
+      borderBottom: r < n - 1 ? `${(r + 1) % bh === 0 ? thick : thin}px solid var(${(r + 1) % bh === 0 ? '--line-box' : '--line'})` : undefined,
     }
 
     const content = hidden ? null : v ? (
@@ -158,7 +160,7 @@ export function Board({
     ) : notes?.[i] ? (
       <span
         className="num grid h-full w-full p-[6%]"
-        style={{ gridTemplate: `repeat(${b}, minmax(0, 1fr)) / repeat(${b}, minmax(0, 1fr))`, fontSize: `calc(${cellSize} * ${noteFactor})` }}
+        style={{ gridTemplate: `repeat(${bh}, minmax(0, 1fr)) / repeat(${bw}, minmax(0, 1fr))`, fontSize: `calc(${cellSize} * ${noteFactor})` }}
         aria-hidden="true"
       >
         {Array.from({ length: n }, (_, k) => k + 1).map((d) => (

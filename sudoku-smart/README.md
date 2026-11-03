@@ -28,7 +28,7 @@ no rewrite rules.
 | Screen | Address | What it does |
 | --- | --- | --- |
 | Home | `/` | Greeting set from your data, the saved board as a preview, Continue / Start, statistics, best times by level, recent wins |
-| Difficulty | `#/difficulty` | Easy, Medium, Hard. Each card previews the **actual** puzzle you will play |
+| Difficulty | `#/difficulty` | Easy 4×4 (numbers 1–4, 2×2 boxes), Medium 6×6 (1–6, 2×3 boxes), Hard 9×9. Each card previews the **actual** puzzle you will play |
 | Game | `#/game` | 9×9 board, keypad with remaining counts, notes, hint, undo/redo, erase, pause, timer, mistakes, progress, win dialog |
 | How to play | `#/howto` | The narrated walkthrough video (with a transcript), the five rules on a highlighted example board, a 4×4 practice puzzle that explains each mistake, the tools |
 | Settings | `#/settings` | Theme, highlight matching numbers, highlight row/column/box, error checking, auto-clear notes, sound, animations, reset |
@@ -37,9 +37,10 @@ Links for presenting: `?theme=light` or `?theme=dark` sets the theme; `#/new/eas
 
 ## Puzzle generation
 
-`src/lib/sudoku.ts` fills a grid with a randomised backtracking solver, then removes clues in symmetric
-pairs, keeping a removal only if a solution counter still finds exactly one solution. Every puzzle is
-valid, solvable and unique. Easy keeps about 40 givens, Medium 32, Hard 26–28.
+`src/lib/sudoku.ts` works on 4×4, 6×6 and 9×9 boards (boxes of 2×2, 2 rows × 3 columns, and 3×3). It
+fills a grid with a randomised backtracking solver, then removes clues in symmetric pairs, keeping a
+removal only if a solution counter still finds exactly one solution. Every puzzle is valid, solvable
+and unique. Easy (4×4) keeps 8 of 16 numbers, Medium (6×6) 16 of 36, Hard (9×9) about 26 of 81.
 
 ## HCI decisions worth presenting
 
