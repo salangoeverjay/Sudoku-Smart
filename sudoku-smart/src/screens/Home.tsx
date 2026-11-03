@@ -61,7 +61,7 @@ export function Home({
 
   const shortcuts = [
     { label: 'New game', note: 'Easy, Medium or Hard', icon: Grid3x3, to: 'difficulty' as Screen },
-    { label: 'How to play', note: 'Rules and practice', icon: BookOpen, to: 'howto' as Screen },
+    { label: 'How to play', note: 'Video, rules, practice', icon: BookOpen, to: 'howto' as Screen },
     { label: 'Settings', note: 'Theme, sound, help', icon: Cog, to: 'settings' as Screen },
   ]
 

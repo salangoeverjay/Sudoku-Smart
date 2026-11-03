@@ -3,6 +3,7 @@ import { ArrowLeft, ArrowRight, Eraser, Lightbulb, Pause, PencilLine, Sparkles, 
 import { useMemo, useState } from 'react'
 import { Board } from '../components/Board'
 import { Button } from '../components/ui'
+import { PRESENTATION } from '../lib/presentation'
 import { play } from '../lib/sound'
 import type { Screen, Settings } from '../lib/store'
 
@@ -122,8 +123,47 @@ export function HowToPlay({ settings, onNavigate }: { settings: Settings; onNavi
       <h1 className="text-[1.375rem] font-semibold tracking-[-0.01em] text-ink lg:text-2xl">How to play</h1>
       <p className="mt-1 text-[0.9375rem] text-muted">Five rules, a practice board, and the tools that help. About two minutes.</p>
 
+      {/* The walkthrough video: the whole game in under two minutes, narrated, with subtitles in the picture */}
+      <section aria-labelledby="video-title" className="mt-8 grid grid-cols-[minmax(0,1fr)] gap-6 lg:grid-cols-12 lg:items-start lg:gap-4">
+        <div className="lg:col-span-8">
+          <video
+            controls
+            playsInline
+            preload="none"
+            poster={PRESENTATION.poster}
+            aria-describedby="video-note"
+            className="aspect-video w-full rounded-[20px] bg-panel ring-1 ring-border"
+          >
+            <source src={PRESENTATION.src} type="video/mp4" />
+            <a href={PRESENTATION.src}>Download the walkthrough video</a>
+          </video>
+        </div>
+        <div className="lg:col-span-4 lg:pl-4">
+          <h2 id="video-title" className="text-lg font-semibold text-ink">
+            Watch the walkthrough
+          </h2>
+          <p className="mt-1 text-[0.9375rem] leading-6 text-ink">
+            Ever Jay Salango, BSIT 4E, plays a puzzle from start to finish: choosing a level, the rules, the tools, and the
+            visual accessibility settings.
+          </p>
+          <p id="video-note" className="mt-2 text-sm text-muted">
+            {PRESENTATION.duration} · narrated · subtitles are part of the picture
+          </p>
+          <details className="group mt-4 rounded-2xl bg-panel">
+            <summary className="cursor-pointer rounded-2xl px-4 py-3 text-[0.9375rem] font-medium text-ink hover:bg-active/60">
+              Read the transcript
+            </summary>
+            <div className="space-y-3 px-4 pb-4 text-sm leading-6 text-ink">
+              {PRESENTATION.transcript.map((para, k) => (
+                <p key={k}>{para}</p>
+              ))}
+            </div>
+          </details>
+        </div>
+      </section>
+
       {/* The rules */}
-      <section aria-labelledby="rules-title" className="mt-8 grid grid-cols-[minmax(0,1fr)] gap-6 lg:grid-cols-12 lg:gap-4">
+      <section aria-labelledby="rules-title" className="mt-16 lg:mt-20 grid grid-cols-[minmax(0,1fr)] gap-6 lg:grid-cols-12 lg:gap-4">
         <div className="lg:col-span-5">
           <h2 id="rules-title" className="text-lg font-semibold text-ink">
             The rules

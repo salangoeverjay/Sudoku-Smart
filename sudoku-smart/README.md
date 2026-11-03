@@ -30,7 +30,7 @@ no rewrite rules.
 | Home | `/` | Greeting set from your data, the saved board as a preview, Continue / Start, statistics, best times by level, recent wins |
 | Difficulty | `#/difficulty` | Easy, Medium, Hard. Each card previews the **actual** puzzle you will play |
 | Game | `#/game` | 9×9 board, keypad with remaining counts, notes, hint, undo/redo, erase, pause, timer, mistakes, progress, win dialog |
-| How to play | `#/howto` | The five rules on a highlighted example board, a 4×4 practice puzzle that explains each mistake, the tools |
+| How to play | `#/howto` | The narrated walkthrough video (with a transcript), the five rules on a highlighted example board, a 4×4 practice puzzle that explains each mistake, the tools |
 | Settings | `#/settings` | Theme, highlight matching numbers, highlight row/column/box, error checking, auto-clear notes, sound, animations, reset |
 
 Links for presenting: `?theme=light` or `?theme=dark` sets the theme; `#/new/easy` (or `medium`, `hard`) opens a fresh game.
