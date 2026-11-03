@@ -7,6 +7,7 @@ export type Theme = 'light' | 'dark' | 'system'
 export interface Settings {
   theme: Theme
   sound: boolean
+  vibration: boolean
   highlightMatching: boolean
   highlightPeers: boolean
   errorChecking: boolean
@@ -17,6 +18,7 @@ export interface Settings {
 export const DEFAULT_SETTINGS: Settings = {
   theme: 'system',
   sound: true,
+  vibration: true,
   highlightMatching: true,
   highlightPeers: true,
   errorChecking: true,

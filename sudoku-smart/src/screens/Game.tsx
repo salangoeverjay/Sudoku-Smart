@@ -17,6 +17,7 @@ import {
   undo,
   type MoveResult,
 } from '../lib/game'
+import { vibrate } from '../lib/haptics'
 import { play } from '../lib/sound'
 import { speak, stopSpeech } from '../lib/speech'
 import { sizeOf, type Difficulty } from '../lib/sudoku'
@@ -89,6 +90,7 @@ export function GameScreen({
       setGame((prev) => ({ ...r.game, elapsed: prev?.elapsed ?? r.game.elapsed }))
       const cue = r.event === 'mistake' ? 'error' : r.event === 'won' ? 'win' : r.event === 'erased' ? 'erase' : r.event === 'note' ? 'note' : r.event === 'hint' ? 'hint' : 'place'
       play(cue, settings.sound)
+      vibrate(cue, settings.vibration)
       const left = r.game.values.filter((v, i) => v !== r.game.solution[i]).length
       if (r.event === 'placed' && r.cell !== undefined) {
         const text = `${r.game.values[r.cell]} placed. ${left} ${left === 1 ? 'cell' : 'cells'} left.`
@@ -116,7 +118,7 @@ export function GameScreen({
         setTimeout(() => setWon(result), motionOk ? 900 : 0)
       }
     },
-    [setGame, settings.sound, motionOk, onWin],
+    [setGame, settings.sound, settings.vibration, motionOk, onWin],
   )
 
   const input = useCallback(

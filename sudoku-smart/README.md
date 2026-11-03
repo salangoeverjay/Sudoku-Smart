@@ -31,7 +31,7 @@ no rewrite rules.
 | Difficulty | `#/difficulty` | Five levels in two groups. Learn the rules: Beginner 4×4 (1–4, 2×2 boxes), Starter 6×6 (1–6, 2×3 boxes). Classic 9×9: Easy (≈40 given), Medium (≈32), Hard (≈26). Each card previews the **actual** puzzle you will play |
 | Game | `#/game` | 9×9 board, keypad with remaining counts, notes, hint, undo/redo, erase, pause, timer, mistakes, progress, win dialog |
 | How to play | `#/howto` | The narrated walkthrough video (with a transcript), the five rules on a highlighted example board, a 4×4 practice puzzle that explains each mistake, the tools |
-| Settings | `#/settings` | Theme, highlight matching numbers, highlight row/column/box, error checking, auto-clear notes, sound, animations, reset |
+| Settings | `#/settings` | Theme, visual accessibility, highlight matching numbers, highlight row/column/box, error checking, auto-clear notes, sound, vibration, reset |
 
 Links for presenting: `?theme=light` or `?theme=dark` sets the theme; `#/new/beginner` (or `starter`, `easy`, `medium`, `hard`) opens a fresh game.
 
@@ -55,6 +55,8 @@ and unique. Beginner (4×4) keeps 8 of 16 numbers, Starter (6×6) 16 of 36, and 
 - **Keyboard and screen readers.** Arrows move, 1–9 place, Shift + number notes, N notes, H hint,
   P pause, Ctrl Z / Ctrl Y. Every cell has a spoken label ("Row 3, column 5, empty, editable, notes 2 7").
 - **Phone first.** On a 390px phone, the board, tools and keypad all fit on one screen.
+- **Feedback you can feel.** Placing a number gives a short vibration, a mistake a double buzz (Android
+  phones; iPhone browsers do not allow it, and Settings says so). Suggested by a tester.
 - **Reduced motion.** Motion can be turned off and always follows the device's reduced-motion setting.
 
 ## Accessibility Enhancements for Visually Impaired Users

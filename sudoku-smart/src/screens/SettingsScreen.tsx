@@ -5,6 +5,7 @@ import { Dialog } from '../components/Dialog'
 import { Button, SwitchRow } from '../components/ui'
 import { AccessibilityHeading, AccessibilityPreview, VisualAccessibility } from '../components/VisualAccessibility'
 import { DEFAULT_A11Y } from '../lib/a11y'
+import { canVibrate, vibrate } from '../lib/haptics'
 import { DEFAULT_SETTINGS, type Settings, type Theme } from '../lib/store'
 
 function Section({
@@ -162,12 +163,26 @@ export function SettingsScreen({
           />
         </Section>
 
-        <Section title="Sound" description="Short tones confirm each move. Motion settings are under Visual Accessibility.">
+        <Section title="Sound and vibration" description="Short tones and buzzes confirm each move. Motion settings are under Visual Accessibility.">
           <SwitchRow
             title="Sound effects"
             description="A soft tone when you place, erase or make a mistake."
             checked={settings.sound}
             onChange={(v) => set('sound', v)}
+          />
+          <SwitchRow
+            title="Vibration"
+            description={
+              canVibrate()
+                ? 'A short buzz when you place a number, a stronger one for a mistake, and a pattern when you win.'
+                : "This device doesn't let websites vibrate (iPhones and most computers), so this has no effect here. It works on most Android phones."
+            }
+            checked={settings.vibration}
+            onChange={(v) => {
+              set('vibration', v)
+              // Let the player feel what they just switched on.
+              if (v) vibrate('place', true)
+            }}
           />
         </Section>
 
@@ -190,7 +205,7 @@ export function SettingsScreen({
             ? 'Puzzles solved, best times, streaks and recent wins are deleted. This cannot be undone.'
             : confirm === 'a11y'
               ? 'Colour vision, font size, contrast, grid, zoom, motion and spoken guidance go back to their standard settings.'
-              : 'Every preference goes back to its default, including theme, sound, board help and visual accessibility.'}
+              : 'Every preference goes back to its default, including theme, sound, vibration, board help and visual accessibility.'}
         </p>
         <div className="mt-6 flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
           <Button onClick={() => setConfirm(null)} data-autofocus>

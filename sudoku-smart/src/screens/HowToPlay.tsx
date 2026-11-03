@@ -4,6 +4,7 @@ import { useMemo, useState } from 'react'
 import { Board } from '../components/Board'
 import { Button } from '../components/ui'
 import { PRESENTATION } from '../lib/presentation'
+import { vibrate } from '../lib/haptics'
 import { play } from '../lib/sound'
 import type { Screen, Settings } from '../lib/store'
 
@@ -90,11 +91,13 @@ export function HowToPlay({ settings, onNavigate }: { settings: Settings; onNavi
     if (d === 0) {
       setFeedback(null)
       play('erase', settings.sound)
+      vibrate('erase', settings.vibration)
       return
     }
     if (d === MINI_SOLUTION[sel]) {
       const done = next.every((v, i) => v === MINI_SOLUTION[i])
       play(done ? 'win' : 'place', settings.sound)
+      vibrate(done ? 'win' : 'place', settings.vibration)
       setFeedback({ text: done ? 'Solved. Every row, column and box holds 1 to 4 once.' : `Yes, ${d} fits here.`, ok: true })
       // Move on to the next empty cell, so the lesson keeps flowing.
       const after = next.findIndex((v, i) => i > sel && !v)
@@ -102,6 +105,7 @@ export function HowToPlay({ settings, onNavigate }: { settings: Settings; onNavi
       if (!done) setSel(after !== -1 ? after : first !== -1 ? first : sel)
     } else {
       play('error', settings.sound)
+      vibrate('error', settings.vibration)
       setFeedback({
         text: miniClash(next, sel, d) ?? `${d} does not clash yet, but another cell in this row needs it. Try a different number.`,
         ok: false,
