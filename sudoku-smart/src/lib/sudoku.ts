@@ -3,7 +3,10 @@
 // A grid is row-major, 0 = empty; its side length comes from its own length (16, 36 or 81 cells).
 
 export type Grid = number[]
-export type Difficulty = 'easy' | 'medium' | 'hard'
+export type Difficulty = 'beginner' | 'starter' | 'easy' | 'medium' | 'hard'
+
+/** Every level, gentlest first. */
+export const DIFFICULTIES: Difficulty[] = ['beginner', 'starter', 'easy', 'medium', 'hard']
 
 /** A board shape: side length, and the height and width of one box. */
 export interface Shape {
@@ -18,10 +21,15 @@ const SHAPES: Record<number, Shape> = {
   9: { n: 9, bh: 3, bw: 3 },
 }
 
-/** Each level is a board size; `clues` is how many numbers the generator aims to leave. */
+/**
+ * Two small boards teach the rules, then three 9×9 levels get harder by giving fewer numbers.
+ * `clues` is how many numbers the generator aims to leave.
+ */
 export const LEVELS: Record<Difficulty, { size: 4 | 6 | 9; clues: number }> = {
-  easy: { size: 4, clues: 8 },
-  medium: { size: 6, clues: 16 },
+  beginner: { size: 4, clues: 8 },
+  starter: { size: 6, clues: 16 },
+  easy: { size: 9, clues: 40 },
+  medium: { size: 9, clues: 32 },
   hard: { size: 9, clues: 26 },
 }
 

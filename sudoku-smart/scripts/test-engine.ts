@@ -1,6 +1,6 @@
-import { generatePuzzle, countSolutions, peersOf, LEVELS, sizeOf, type Difficulty } from '../src/lib/sudoku.ts'
+import { generatePuzzle, countSolutions, peersOf, LEVELS, sizeOf, DIFFICULTIES } from '../src/lib/sudoku.ts'
 const valid = (g: number[]) => { const n = sizeOf(g), P = peersOf(n); return g.every((v, i) => v >= 1 && v <= n && P[i].every((j) => g[j] !== v)) }
-for (const d of ['easy', 'medium', 'hard'] as Difficulty[]) {
+for (const d of DIFFICULTIES) {
   const { size } = LEVELS[d]
   const times: number[] = [], clues: number[] = []
   for (let k = 0; k < 30; k++) {

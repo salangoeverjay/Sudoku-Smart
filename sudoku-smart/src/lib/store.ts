@@ -1,5 +1,5 @@
 import { DEFAULT_A11Y, normaliseA11y, type A11y } from './a11y'
-import type { Difficulty, Grid } from './sudoku'
+import { DIFFICULTIES, sizeOf, type Difficulty, type Grid } from './sudoku'
 
 export type Screen = 'home' | 'difficulty' | 'game' | 'howto' | 'settings'
 export type Theme = 'light' | 'dark' | 'system'
@@ -53,6 +53,8 @@ export interface Result {
   mistakes: number
   hints: number
   finishedAt: number
+  /** Board side the win was played on (wins recorded before sizes existed leave it out). */
+  size?: number
 }
 
 export interface Stats {
@@ -66,13 +68,13 @@ export interface Stats {
 }
 
 export const EMPTY_STATS: Stats = {
-  started: { easy: 0, medium: 0, hard: 0 },
-  won: { easy: 0, medium: 0, hard: 0 },
-  best: { easy: null, medium: null, hard: null },
+  started: { beginner: 0, starter: 0, easy: 0, medium: 0, hard: 0 },
+  won: { beginner: 0, starter: 0, easy: 0, medium: 0, hard: 0 },
+  best: { beginner: null, starter: null, easy: null, medium: null, hard: null },
   streak: 0,
   bestStreak: 0,
   recent: [],
-  lastDifficulty: 'easy',
+  lastDifficulty: 'beginner',
 }
 
 export const HINTS_PER_GAME = 3
@@ -111,7 +113,17 @@ export function loadSettings(): Settings {
 }
 export const saveSettings = (s: Settings) => write(KEY.settings, s)
 
-export const loadStats = () => read(KEY.stats, EMPTY_STATS)
+// Stats saved before a level existed get zeros for it, so every level always has a count.
+export function loadStats(): Stats {
+  const s = read(KEY.stats, EMPTY_STATS)
+  return {
+    ...s,
+    started: { ...EMPTY_STATS.started, ...s.started },
+    won: { ...EMPTY_STATS.won, ...s.won },
+    best: { ...EMPTY_STATS.best, ...s.best },
+    lastDifficulty: DIFFICULTIES.includes(s.lastDifficulty) ? s.lastDifficulty : 'beginner',
+  }
+}
 export const saveStats = (s: Stats) => write(KEY.stats, s)
 
 export function loadGame(): Game | null {
@@ -129,9 +141,11 @@ export function loadGame(): Game | null {
 export const saveGame = (g: Game | null) =>
   write(KEY.game, g && g.status === 'playing' ? { ...g, history: [], future: [] } : null)
 
-export const DIFFICULTY_LABEL: Record<Difficulty, string> = { easy: 'Easy', medium: 'Medium', hard: 'Hard' }
+export const DIFFICULTY_LABEL: Record<Difficulty, string> = { beginner: 'Beginner', starter: 'Starter', easy: 'Easy', medium: 'Medium', hard: 'Hard' }
 /** The board each level plays on. */
-export const SIZE_LABEL: Record<Difficulty, string> = { easy: '4×4', medium: '6×6', hard: '9×9' }
+export const SIZE_LABEL: Record<Difficulty, string> = { beginner: '4×4', starter: '6×6', easy: '9×9', medium: '9×9', hard: '9×9' }
+/** A board's size as shown, read from the grid itself (a saved game keeps the size it was played on). */
+export const boardLabel = (g: Grid) => `${sizeOf(g)}×${sizeOf(g)}`
 
 export function formatTime(total: number): string {
   const s = Math.max(0, Math.floor(total))

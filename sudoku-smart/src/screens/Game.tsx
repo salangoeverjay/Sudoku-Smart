@@ -20,7 +20,7 @@ import {
 import { play } from '../lib/sound'
 import { speak, stopSpeech } from '../lib/speech'
 import { sizeOf, type Difficulty } from '../lib/sudoku'
-import { DIFFICULTY_LABEL, SIZE_LABEL, formatTime, progressOf, type Game, type Screen, type Settings, type Stats } from '../lib/store'
+import { DIFFICULTY_LABEL, boardLabel, formatTime, progressOf, type Game, type Screen, type Settings, type Stats } from '../lib/store'
 import { Celebration } from './Celebration'
 
 type Tone = 'info' | 'error' | 'hint'
@@ -269,7 +269,7 @@ export function GameScreen({
           <div className="min-w-0">
             <h1 className="text-[1.375rem] leading-tight font-semibold tracking-[-0.01em] text-ink lg:text-2xl">{label} puzzle</h1>
             <p className="mt-1 text-sm text-muted">
-              {SIZE_LABEL[game.difficulty]} board · {progress.total - progress.filled} of {progress.total} cells left to fill
+              {boardLabel(game.puzzle)} board · {progress.total - progress.filled} of {progress.total} cells left to fill
             </p>
           </div>
           <div className="flex items-center gap-2">

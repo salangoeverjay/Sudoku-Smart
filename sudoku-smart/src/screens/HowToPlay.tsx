@@ -169,8 +169,8 @@ export function HowToPlay({ settings, onNavigate }: { settings: Settings; onNavi
             The rules
           </h2>
           <p className="mt-1 text-sm leading-5 text-muted">
-            Shown on the 9×9 board used by Hard. Easy is 4×4 with numbers 1 to 4, Medium is 6×6 with 1 to 6; the rules
-            are the same.
+            Shown on the 9×9 board of Easy, Medium and Hard. Beginner is 4×4 with numbers 1 to 4 and Starter is 6×6
+            with 1 to 6; the rules are the same.
           </p>
           <ol className="mt-3 space-y-2">
             {STEPS.map((st, k) => {

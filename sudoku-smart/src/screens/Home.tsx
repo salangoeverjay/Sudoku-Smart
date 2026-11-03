@@ -1,10 +1,10 @@
 import { BookOpen, ChevronRight, Grid3x3, Play, Settings as Cog } from 'lucide-react'
 import { Board } from '../components/Board'
 import { Button } from '../components/ui'
-import { sizeOf, type Difficulty } from '../lib/sudoku'
-import { DIFFICULTY_LABEL, SIZE_LABEL, formatTime, HINTS_PER_GAME, progressOf, type Game, type Screen, type Stats } from '../lib/store'
+import { DIFFICULTIES, sizeOf } from '../lib/sudoku'
+import { DIFFICULTY_LABEL, SIZE_LABEL, boardLabel, formatTime, HINTS_PER_GAME, progressOf, type Game, type Screen, type Stats } from '../lib/store'
 
-const LEVELS: Difficulty[] = ['easy', 'medium', 'hard']
+const LEVELS = DIFFICULTIES
 
 function partOfDay(d: Date) {
   const h = d.getHours()
@@ -65,7 +65,7 @@ export function Home({
     { label: 'Settings', note: 'Theme, sound, help', icon: Cog, to: 'settings' as Screen },
   ]
 
-  const recent = stats.recent.slice(0, 3)
+  const recent = stats.recent.slice(0, 5)
 
   return (
     <div className="mx-auto w-full max-w-[1132px] px-4 pt-7 pb-16 sm:px-6 lg:px-4 lg:pt-[72px]">
@@ -109,7 +109,7 @@ export function Home({
               {game && progress ? (
                 <>
                   <p className="mt-2 text-2xl text-ink">
-                    {DIFFICULTY_LABEL[game.difficulty]} {SIZE_LABEL[game.difficulty]} · <span className="num">{progress.filled}</span>
+                    {DIFFICULTY_LABEL[game.difficulty]} {boardLabel(game.puzzle)} · <span className="num">{progress.filled}</span>
                     <span className="text-muted"> of </span>
                     <span className="num">{progress.total}</span>
                     <span className="text-muted"> cells</span>
@@ -247,7 +247,7 @@ export function Home({
                 <li key={r.id} className="flex min-h-[3.25rem] items-center justify-between gap-4 border-t border-rule first:border-t-0">
                   <span className="min-w-0">
                     <span className="block text-[0.9375rem] text-ink">
-                      {DIFFICULTY_LABEL[r.difficulty]} {SIZE_LABEL[r.difficulty]} in <span className="num">{formatTime(r.seconds)}</span>
+                      {DIFFICULTY_LABEL[r.difficulty] ?? r.difficulty} {r.size ? `${r.size}×${r.size}` : SIZE_LABEL[r.difficulty] ?? ''} in <span className="num">{formatTime(r.seconds)}</span>
                     </span>
                     <span className="block text-[0.8125rem] text-muted">
                       {r.mistakes} {r.mistakes === 1 ? 'mistake' : 'mistakes'} · {r.hints} {r.hints === 1 ? 'hint' : 'hints'}

@@ -40,11 +40,11 @@ export default function App() {
   useEffect(() => saveStats(stats), [stats])
   useEffect(() => saveGame(game), [game])
 
-  // #/new/easy (or medium, hard) opens a fresh game at that level straight from a link.
+  // #/new/beginner (or starter, easy, medium, hard) opens a fresh game at that level straight from a link.
   const startRef = useRef<(d: Difficulty) => void>(() => {})
   useEffect(() => {
     const onHash = () => {
-      const deep = /^#\/new\/(easy|medium|hard)$/.exec(location.hash)
+      const deep = /^#\/new\/(beginner|starter|easy|medium|hard)$/.exec(location.hash)
       if (deep) {
         history.replaceState(null, '', location.pathname + location.search + '#/game')
         startRef.current(deep[1] as Difficulty)
@@ -113,6 +113,7 @@ export default function App() {
               mistakes: g.mistakes,
               hints: g.hinted.length,
               finishedAt: Date.now(),
+              size: Math.round(Math.sqrt(g.puzzle.length)),
             },
             ...s.recent,
           ].slice(0, RECENT_CAP),

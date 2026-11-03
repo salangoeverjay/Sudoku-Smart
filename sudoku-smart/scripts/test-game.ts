@@ -1,9 +1,9 @@
 import { newGame, placeValue, toggleNote, eraseCell, applyHint, undo, redo, restart, digitCounts } from '../src/lib/game.ts'
 import { DEFAULT_SETTINGS, progressOf } from '../src/lib/store.ts'
-import { sizeOf, type Difficulty } from '../src/lib/sudoku.ts'
+import { sizeOf, DIFFICULTIES } from '../src/lib/sudoku.ts'
 const ok = (c: unknown, m: string) => { if (!c) { console.error('FAIL', m); process.exitCode = 1 } else console.log('ok  ', m) }
 const S = DEFAULT_SETTINGS
-for (const level of ['easy', 'medium', 'hard'] as Difficulty[]) {
+for (const level of DIFFICULTIES) {
   let g = newGame(level)
   const n = sizeOf(g.puzzle)
   const tag = `${level} ${n}x${n}:`

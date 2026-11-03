@@ -28,19 +28,20 @@ no rewrite rules.
 | Screen | Address | What it does |
 | --- | --- | --- |
 | Home | `/` | Greeting set from your data, the saved board as a preview, Continue / Start, statistics, best times by level, recent wins |
-| Difficulty | `#/difficulty` | Easy 4×4 (numbers 1–4, 2×2 boxes), Medium 6×6 (1–6, 2×3 boxes), Hard 9×9. Each card previews the **actual** puzzle you will play |
+| Difficulty | `#/difficulty` | Five levels in two groups. Learn the rules: Beginner 4×4 (1–4, 2×2 boxes), Starter 6×6 (1–6, 2×3 boxes). Classic 9×9: Easy (≈40 given), Medium (≈32), Hard (≈26). Each card previews the **actual** puzzle you will play |
 | Game | `#/game` | 9×9 board, keypad with remaining counts, notes, hint, undo/redo, erase, pause, timer, mistakes, progress, win dialog |
 | How to play | `#/howto` | The narrated walkthrough video (with a transcript), the five rules on a highlighted example board, a 4×4 practice puzzle that explains each mistake, the tools |
 | Settings | `#/settings` | Theme, highlight matching numbers, highlight row/column/box, error checking, auto-clear notes, sound, animations, reset |
 
-Links for presenting: `?theme=light` or `?theme=dark` sets the theme; `#/new/easy` (or `medium`, `hard`) opens a fresh game.
+Links for presenting: `?theme=light` or `?theme=dark` sets the theme; `#/new/beginner` (or `starter`, `easy`, `medium`, `hard`) opens a fresh game.
 
 ## Puzzle generation
 
 `src/lib/sudoku.ts` works on 4×4, 6×6 and 9×9 boards (boxes of 2×2, 2 rows × 3 columns, and 3×3). It
 fills a grid with a randomised backtracking solver, then removes clues in symmetric pairs, keeping a
 removal only if a solution counter still finds exactly one solution. Every puzzle is valid, solvable
-and unique. Easy (4×4) keeps 8 of 16 numbers, Medium (6×6) 16 of 36, Hard (9×9) about 26 of 81.
+and unique. Beginner (4×4) keeps 8 of 16 numbers, Starter (6×6) 16 of 36, and the 9×9 levels about 40
+(Easy), 32 (Medium) and 26 (Hard) of 81.
 
 ## HCI decisions worth presenting
 
